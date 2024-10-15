@@ -4,15 +4,15 @@ the code following each '# %%' label is treated as a separate code cell.
 """
 
 # %%
-# @formatter:off
 # Environment: Apple M1 Max, macOS 15.0, Python 3.10
-!pip install ipython
-!pip install matplotlib
-!pip install mediapipe
-!pip install opencv-python
-!pip install tensorflow
-!pip install tensorflow-metal
-# @formatter:on
+"""
+pip install ipython
+pip install matplotlib
+pip install mediapipe
+pip install opencv-python
+pip install tensorflow
+pip install tensorflow-metal
+"""
 
 # %%
 import os
@@ -118,6 +118,7 @@ KEYPOINT_EDGE_INDS_TO_COLOR = {tuple(KEYPOINT_DICT[COCO_KEYPOINTS[i]] for i in k
 # %%
 print(KEYPOINT_EDGE_INDS_TO_COLOR)
 
+
 # %%
 def save_image_with_prediction(idx,
                                raw_image,
@@ -169,6 +170,7 @@ def save_image_with_prediction(idx,
 
     return f"./output/{idx:08d}.png"
 
+
 # %%
 dataset_root_dir = "./dataset"
 raw_images: list[np.ndarray] = []  # Each entry is a 3-channel RGB images [0, 255]
@@ -192,6 +194,7 @@ for dirpath, dirnames, filenames in os.walk(dataset_root_dir):
         image = image[..., :3]
         raw_images.append(image.numpy())
 
+
 # %%
 def run_inference(model, image: np.ndarray) -> np.ndarray:
     # Perform pose estimation on the image
@@ -212,6 +215,7 @@ def run_inference(model, image: np.ndarray) -> np.ndarray:
 
     return keypoints_with_scores
 
+
 # %%
 mp_pose = mp.solutions.pose
 with mp_pose.Pose(static_image_mode=True,
@@ -227,6 +231,7 @@ print("Total time spent:", end_time - start_time)
 memory_usage = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss  # bytes
 print(f"Memory usage: {memory_usage / 1024 ** 3:.2f} GB")
 
+
 # %%
 def show_and_save(image_idx):
     output_path = save_image_with_prediction(image_idx,
@@ -240,6 +245,7 @@ def show_and_save(image_idx):
     plt.imshow(image)
     plt.axis('off')  # Hide the axis
     # plt.show()
+
 
 # %%
 os.makedirs("./output", exist_ok=True)
