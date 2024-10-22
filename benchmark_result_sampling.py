@@ -3,7 +3,7 @@ import matplotlib.image as mpimg
 
 # File paths for each column (first column: ./posenet, second column: ./movenet, third column: ./blazepose)
 folders = ['./posenet', './movenet', './blazepose']
-filenames = ['00000006.png', '00000165.png', '00000207.png', '00000282.png']
+filenames = ['00000340.png', '00000165.png', '00000207.png', '00000876.png']
 
 # Labels for rows (pose names) and columns (model names)
 row_labels = ['Down Dog', 'Plank', 'Tree', 'Warrior']
