@@ -1,8 +1,8 @@
-import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
 
-# File paths for each column (first column: ./posenet, second column: ./movenet, third column: ./blazepose)
-folders = ['./posenet', './movenet', './blazepose']
+# File paths for each column
+folders = ['./benchmark_output/posenet', './benchmark_output/movenet', './benchmark_output/blazepose']
 filenames = ['00000340.png', '00000165.png', '00000207.png', '00000876.png']
 
 # Labels for rows (pose names) and columns (model names)
