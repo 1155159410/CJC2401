@@ -304,7 +304,7 @@ val_losses = val_losses[:num_epochs]
 train_accuracies = train_accuracies[:num_epochs]
 val_accuracies = val_accuracies[:num_epochs]
 
-while True:
+while scheduler.get_last_lr()[0] > 1e-6:
     """ Train """
     model.train()
     train_loss = 0
