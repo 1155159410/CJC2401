@@ -2,12 +2,12 @@
 # Environment: Apple M1 Max, macOS 15.0, Python 3.10
 # TODO:
 """
-pip install ipython
 pip install matplotlib
 pip install mediapipe
-pip install opencv-python
-pip install tensorflow
-pip install tensorflow-metal
+pip install pillow
+pip install scikit-learn
+pip install torch
+pip install tqdm
 """
 
 # %% Import necessary modules
