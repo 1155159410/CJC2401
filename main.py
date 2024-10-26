@@ -62,6 +62,11 @@ for posture_class, posture_name in enumerate(postures):
             # Append the corresponding posture and label to the labels list
             label_list.append([posture_class, correctness])
 
+# %% Apply horizontal flip as an augmentation
+for image_np in image_list[:]:
+    image_list.append(np.fliplr(image_np))
+label_list *= 2
+
 # %% Pass images to BlazePose to extract keypoints
 blazepose_results: list[list[list[float]]] = []  # List to store keypoints for all images
 
@@ -287,13 +292,19 @@ def count_correct_predictions(output_batch: torch.tensor, label_batch: torch.ten
     return num_correct
 
 
-# %% Main training loop
+# %% Initialize variables for the main loop
+num_epochs = 0
 train_losses, val_losses = [], []
 train_accuracies, val_accuracies = [], []
 
-for num_epochs in range(1000):
-    num_epochs += 1
+# %% Main training loop
+# Trim the record lists to avoid length inconsistency caused by a KeyboardInterrupt in the main loop
+train_losses = train_losses[:num_epochs]
+val_losses = val_losses[:num_epochs]
+train_accuracies = train_accuracies[:num_epochs]
+val_accuracies = val_accuracies[:num_epochs]
 
+while True:
     """ Train """
     model.train()
     train_loss = 0
@@ -353,6 +364,9 @@ for num_epochs in range(1000):
     val_losses.append(avg_val_loss)
     val_accuracies.append(avg_val_accuracy)
 
+    # Increment the number of epochs
+    num_epochs += 1
+
     # Print epoch summary
     print(f"\rEpoch {num_epochs} | Train Loss: {avg_train_loss:.4f}, Train Accuracy: {avg_train_accuracy:.4f} | "
           f"Val Loss: {avg_val_loss:.4f}, Val Accuracy: {avg_val_accuracy:.4f}")
@@ -367,10 +381,10 @@ for num_epochs in range(1000):
             'num_epochs': num_epochs,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
-            'train_loss': avg_train_loss,
-            'val_loss': avg_val_loss,
-            'train_accuracy': avg_train_accuracy,
-            'val_accuracy': avg_val_accuracy,
+            'train_losses': train_losses,
+            'val_losses': val_losses,
+            'train_accuracies': train_accuracies,
+            'val_accuracies': val_accuracies,
         }, checkpoint_path)
         print(f'\rCheckpoint saved at "{checkpoint_path}"')
 
