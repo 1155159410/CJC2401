@@ -373,3 +373,5 @@ for num_epochs in range(1000):
             'val_accuracy': avg_val_accuracy,
         }, checkpoint_path)
         print(f'\rCheckpoint saved at "{checkpoint_path}"')
+
+    print()
