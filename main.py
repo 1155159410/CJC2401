@@ -18,6 +18,7 @@ import mediapipe as mp
 import numpy as np
 import torch
 from PIL import Image
+from matplotlib import pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
 from torch import nn
 from torch import optim
@@ -390,3 +391,21 @@ while scheduler.get_last_lr()[0] > 1e-6:
         print(f'\rCheckpoint saved at "{checkpoint_path}"')
 
     print()
+
+# %% Plot the loss curves
+plt.plot(train_losses, label='Training Loss')
+plt.plot(val_losses, label='Validation Loss')
+plt.title('Training and Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+# %% Plot the accuracy curves
+plt.plot(train_accuracies, label='Training Accuracy')
+plt.plot(val_accuracies, label='Validation Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
