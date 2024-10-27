@@ -17,11 +17,11 @@ from collections import Counter
 import mediapipe as mp
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 from PIL import Image
 from sklearn.preprocessing import MinMaxScaler
+from torch import nn
+from torch import optim
+from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
 from torch.utils.data import WeightedRandomSampler
@@ -373,6 +373,7 @@ while scheduler.get_last_lr()[0] > 1e-6:
 
     # Step the scheduler
     scheduler.step(avg_val_loss)
+    print("Next Epoch Learning Rate:", scheduler.get_last_lr()[0])
 
     # Save checkpoint every 20 epochs
     if num_epochs % 20 == 0:
