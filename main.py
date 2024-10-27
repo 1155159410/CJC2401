@@ -179,27 +179,47 @@ test_loader = DataLoader(test_dataset, batch_size=32)
 
 # %% Defining the model: Attempt 1 - MLP
 class MLP(nn.Module):
+    """
+    # Params: ~800K
+
+    ReLU; SGD (lr=0.01, momentum=0.9, weight_decay=0.0001):
+    - Epoch 183 | Train Loss: 0.1239, Train Acc: 0.9622 | Val Loss: 0.3346, Val Acc: 0.8676
+
+    LeakyReLU; SGD (lr=0.01, momentum=0.9, weight_decay=0.0001):
+    - Epoch 163 | Train Loss: 0.0796, Train Acc: 0.9732 | Val Loss: 0.3571, Val Acc: 0.8787
+    """
+
     def __init__(self):
         super().__init__()
 
         # Input size is 33 * 4 = 132, output size is 2 * 2 = 4
-        self.fc1 = nn.Linear(132, 256)
-        self.fc2 = nn.Linear(256, 128)
-        self.fc3 = nn.Linear(128, 64)
-        self.fc4 = nn.Linear(64, 32)
-        self.fc5 = nn.Linear(32, 4)
+        self.fc1 = nn.Linear(132, 1024)
+        self.fc2 = nn.Linear(1024, 512)
+        self.fc3 = nn.Linear(512, 256)
+        self.fc4 = nn.Linear(256, 64)
+        self.fc5 = nn.Linear(64, 4)
+
+        # Apply weight initialization
+        self._initialize_weights()
 
     def forward(self, x):
         # Flatten the input from (batch_size, 33, 4) to (batch_size, 132)
         x = torch.flatten(x, start_dim=1)
 
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
-        x = F.relu(self.fc4(x))
+        x = F.leaky_relu(self.fc1(x))
+        x = F.leaky_relu(self.fc2(x))
+        x = F.leaky_relu(self.fc3(x))
+        x = F.leaky_relu(self.fc4(x))
         x = self.fc5(x)
 
         return x.view(-1, 2, 2)  # Reshape to (batch_size, 2, 2)
+
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.kaiming_normal_(m.weight, nonlinearity='leaky_relu')
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
 
 
 # %% Defining the model: Attempt 2 - Shared MLP
