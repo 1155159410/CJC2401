@@ -311,12 +311,86 @@ class SharedMLP(nn.Module):
                     nn.init.zeros_(m.bias)
 
 
+# %% Defining the model: Attempt 3 - Shared MLP Lite
+class SharedMLPLite(nn.Module):
+    """
+    # Params: ~600K
+
+    LeakyReLU, Batch Normalization; SGD (lr=0.01, momentum=0.9, weight_decay=0.0001):
+    Epoch 172 | Train Loss: 0.0858, Train Accuracy: 0.9701 | Val Loss: 0.3906, Val Accuracy: 0.8934
+
+    LeakyReLU; SGD (lr=0.01, momentum=0.9, weight_decay=0.0001):
+    Epoch 182 | Train Loss: 0.1114, Train Accuracy: 0.9725 | Val Loss: 0.3520, Val Accuracy: 0.8824
+    """
+
+    def __init__(self, dropout_p: float = 0, batch_norm: bool = False):
+        super().__init__()
+
+        self.dropout_p = dropout_p
+
+        # Shared MLP for each keypoint's (x, y, z, confidence)
+        self.point_mlp = nn.Sequential(
+            nn.Linear(4, 32),
+            nn.BatchNorm1d(32) if batch_norm else nn.Identity(),
+            nn.LeakyReLU(),
+            nn.Dropout(p=self.dropout_p)
+        )
+
+        # After processing all 33 keypoints, aggregate features
+        self.fc1 = nn.Linear(32 * 33, 512)
+        self.bn1 = nn.BatchNorm1d(512) if batch_norm else nn.Identity()
+        self.fc2 = nn.Linear(512, 256)
+        self.bn2 = nn.BatchNorm1d(256) if batch_norm else nn.Identity()
+        self.fc3 = nn.Linear(256, 64)
+        self.bn3 = nn.BatchNorm1d(64) if batch_norm else nn.Identity()
+        self.fc4 = nn.Linear(64, 4)
+
+        self.dropout = nn.Dropout(p=self.dropout_p)
+
+        # Apply weight initialization
+        self._initialize_weights()
+
+    def forward(self, x):
+        # Apply point-specific MLP to each row (keypoint)
+        batch_size, num_points, num_features = x.shape  # (batch_size, 33, 4)
+
+        # Process each keypoint independently using the shared MLP
+        x = self.point_mlp(x.view(-1, num_features))  # Shape: (batch_size * 33, 32)
+
+        # Reshape back to (batch_size, 33, 32)
+        x = x.view(batch_size, num_points, -1)
+
+        # Flatten the processed keypoints into a single vector for each sample
+        x = torch.flatten(x, start_dim=1)
+
+        # Fully connected layers for aggregation
+        x = F.leaky_relu(self.bn1(self.fc1(x)))
+        x = self.dropout(x)
+
+        x = F.leaky_relu(self.bn2(self.fc2(x)))
+        x = self.dropout(x)
+
+        x = F.leaky_relu(self.bn3(self.fc3(x)))
+        x = self.dropout(x)
+
+        output = self.fc4(x)  # Output shape (batch_size, 4)
+
+        return output.view(batch_size, 2, 2)  # Reshape to (batch_size, 2, 2)
+
+    def _initialize_weights(self):
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.kaiming_normal_(m.weight, nonlinearity='leaky_relu')
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+
+
 # %% Get available acceleration device
 device = torch.device('mps' if torch.backends.mps.is_available()
                       else 'cuda' if torch.cuda.is_available() else 'cpu')
 
 # %% Instantiate the model
-model = SharedMLP()
+model = SharedMLPLite()
 model = model.to(device)
 
 
