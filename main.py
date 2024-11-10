@@ -250,7 +250,7 @@ val_losses = val_losses[:num_epochs]
 train_accuracies = train_accuracies[:num_epochs]
 val_accuracies = val_accuracies[:num_epochs]
 
-while scheduler.get_last_lr()[0] > 1e-6:
+while scheduler.get_last_lr()[0] > 1e-5:
     """ Train """
     model.train()
     train_loss = 0
@@ -360,3 +360,20 @@ axes[1].legend()
 plt.subplots_adjust(wspace=0.3)
 
 plt.show()
+
+# %% Load a checkpoint
+checkpoint_path = "./checkpoint_epoch_000020.pth"
+
+# Load the checkpoint dictionary
+checkpoint = torch.load(checkpoint_path)
+
+# Restore the states and variables
+num_epochs = checkpoint['num_epochs']
+model.load_state_dict(checkpoint['model_state_dict'])
+optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+train_losses = checkpoint['train_losses']
+val_losses = checkpoint['val_losses']
+train_accuracies = checkpoint['train_accuracies']
+val_accuracies = checkpoint['val_accuracies']
+
+print(f'\nCheckpoint loaded from "{checkpoint_path}"')
