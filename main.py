@@ -11,6 +11,7 @@ pip install tqdm
 """
 
 # %% Import necessary modules
+import importlib
 import os
 import pickle
 from collections import Counter
@@ -194,7 +195,8 @@ device = torch.device('mps' if torch.backends.mps.is_available()
                       else 'cuda' if torch.cuda.is_available() else 'cpu')
 
 # %% Instantiate the model
-model = models.SharedMLPLite()
+importlib.reload(models)
+model = models.SharedMLP()
 model = model.to(device)
 
 
