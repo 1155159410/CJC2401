@@ -337,20 +337,26 @@ while scheduler.get_last_lr()[0] > 1e-6:
 
     print()
 
-# %% Plot the loss curves
-plt.plot(train_losses, label='Training Loss')
-plt.plot(val_losses, label='Validation Loss')
-plt.title('Training and Validation Loss')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
-plt.legend()
-plt.show()
+# %% Plot the loss and accuracy curves
+fig, axes = plt.subplots(1, 2, figsize=(12, 5), dpi=300)
 
-# %% Plot the accuracy curves
-plt.plot(train_accuracies, label='Training Accuracy')
-plt.plot(val_accuracies, label='Validation Accuracy')
-plt.title('Training and Validation Accuracy')
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
-plt.legend()
+# Plot the loss curves
+axes[0].plot(train_losses, label='Training Loss')
+axes[0].plot(val_losses, label='Validation Loss')
+axes[0].set_title('Training and Validation Loss')
+axes[0].set_xlabel('Epochs')
+axes[0].set_ylabel('Loss')
+axes[0].legend()
+
+# Plot the accuracy curves
+axes[1].plot(train_accuracies, label='Training Accuracy')
+axes[1].plot(val_accuracies, label='Validation Accuracy')
+axes[1].set_title('Training and Validation Accuracy')
+axes[1].set_xlabel('Epochs')
+axes[1].set_ylabel('Accuracy')
+axes[1].legend()
+
+# Adjust layout
+plt.subplots_adjust(wspace=0.3)
+
 plt.show()
