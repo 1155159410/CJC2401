@@ -1,10 +1,8 @@
 # %% Terminal commands to set up the environment
 # Environment: Apple M1 Max, macOS 15.0, Python 3.10
-# TODO:
 """
 pip install matplotlib
 pip install mediapipe
-pip install pillow
 pip install scikit-learn
 pip install torch
 pip install tqdm
