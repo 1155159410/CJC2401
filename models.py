@@ -1,6 +1,10 @@
+from operator import mul
+
 import torch
 from torch import nn
 from torch.nn import functional as F
+
+OUT_SHAPE = (4, 2)
 
 
 class MLP(nn.Module):
@@ -17,12 +21,12 @@ class MLP(nn.Module):
     def __init__(self):
         super().__init__()
 
-        # Input size is 33 * 4 = 132, output size is 2 * 2 = 4
+        # Input size is 33 * 4 = 132
         self.fc1 = nn.Linear(132, 1024)
         self.fc2 = nn.Linear(1024, 512)
         self.fc3 = nn.Linear(512, 256)
         self.fc4 = nn.Linear(256, 64)
-        self.fc5 = nn.Linear(64, 4)
+        self.fc5 = nn.Linear(64, mul(*OUT_SHAPE))
 
         # Apply weight initialization
         self._initialize_weights()
@@ -37,7 +41,7 @@ class MLP(nn.Module):
         x = F.leaky_relu(self.fc4(x))
         x = self.fc5(x)
 
-        return x.view(-1, 2, 2)  # Reshape to (batch_size, 2, 2)
+        return x.view(-1, *OUT_SHAPE)  # Reshape to (batch_size, *OUT_SHAPE)
 
     def _initialize_weights(self):
         for m in self.modules():
@@ -93,7 +97,7 @@ class SharedMLP(nn.Module):
         self.bn2 = nn.BatchNorm1d(512)
         self.fc3 = nn.Linear(512, 64)
         self.bn3 = nn.BatchNorm1d(64)
-        self.fc4 = nn.Linear(64, 4)
+        self.fc4 = nn.Linear(64, mul(*OUT_SHAPE))
 
         self.dropout = nn.Dropout(p=self.dropout_p)
 
@@ -123,9 +127,9 @@ class SharedMLP(nn.Module):
         x = F.leaky_relu(self.bn3(self.fc3(x)))
         x = self.dropout(x)
 
-        output = self.fc4(x)  # Output shape (batch_size, 4)
+        output = self.fc4(x)
 
-        return output.view(batch_size, 2, 2)  # Reshape to (batch_size, 2, 2)
+        return output.view(batch_size, *OUT_SHAPE)  # Reshape to (batch_size, *OUT_SHAPE)
 
     def _initialize_weights(self):
         for m in self.modules():
@@ -169,7 +173,7 @@ class SharedMLPLite(nn.Module):
         self.bn2 = nn.BatchNorm1d(256) if batch_norm else nn.Identity()
         self.fc3 = nn.Linear(256, 64)
         self.bn3 = nn.BatchNorm1d(64) if batch_norm else nn.Identity()
-        self.fc4 = nn.Linear(64, 4)
+        self.fc4 = nn.Linear(64, mul(*OUT_SHAPE))
 
         self.dropout = nn.Dropout(p=self.dropout_p)
 
@@ -201,9 +205,9 @@ class SharedMLPLite(nn.Module):
         x = F.leaky_relu(self.bn3(self.fc3(x)))
         x = self.dropout(x)
 
-        output = self.fc4(x)  # Output shape (batch_size, 4)
+        output = self.fc4(x)
 
-        return output.view(batch_size, 2, 2)  # Reshape to (batch_size, 2, 2)
+        return output.view(batch_size, *OUT_SHAPE)  # Reshape to (batch_size, *OUT_SHAPE)
 
     def _initialize_weights(self):
         for m in self.modules():
