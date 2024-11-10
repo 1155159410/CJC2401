@@ -4,7 +4,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-OUT_SHAPE = (4, 2)
+OUT_SHAPE = (4, 2)  # (No. of posture classes, 2)
 
 
 class MLP(nn.Module):
