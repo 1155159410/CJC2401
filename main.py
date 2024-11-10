@@ -217,7 +217,7 @@ def loss_func(output_batch, label_batch):
 
 
 # %% Define the optimizer and learning rate scheduler
-optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9, weight_decay=0.0001)
+optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0001)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10)
 
 
