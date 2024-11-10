@@ -31,7 +31,7 @@ from tqdm import tqdm
 
 import models
 
-# %% Load dataset images into NumPy arrays
+# %% [PREPROC] Load dataset images into NumPy arrays
 postures: list[str] = ['downdog', 'plank', 'side_plank', 'warrior_ii']
 dataset_base_path: str = "./dataset"
 
@@ -65,12 +65,12 @@ for posture_class, posture_name in enumerate(postures):
             # Append the corresponding posture and label to the labels list
             label_list.append([posture_class, correctness])
 
-# %% Apply horizontal flip as an augmentation
+# %% [PREPROC] Apply horizontal flip as an augmentation
 for image_np in image_list[:]:
     image_list.append(np.fliplr(image_np))
 label_list *= 2
 
-# %% Pass images to BlazePose to extract keypoints
+# %% [PREPROC] Pass images to BlazePose to extract keypoints
 blazepose_results: list[list[list[float]]] = []  # List to store keypoints for all images
 
 mp_pose = mp.solutions.pose
@@ -99,14 +99,14 @@ with mp_pose.Pose(static_image_mode=True,
         # Append the keypoints for this image to the results list
         blazepose_results.append(keypoints)
 
-# %% Filter out images that have no detected landmarks
+# %% [PREPROC] Filter out images that have no detected landmarks
 for i in reversed(range(len(blazepose_results))):
     if not blazepose_results[i]:
         del blazepose_results[i]
         del image_list[i]
         del label_list[i]
 
-# %% Store valid BlazePose results and corresponding labels in a file
+# %% [PREPROC] Store valid BlazePose results and corresponding labels in a file
 with open("blazepose_results.pkl", 'wb') as f:
     pickle.dump(blazepose_results, f)
 
