@@ -73,7 +73,6 @@ blazepose_results: list[list[list[float]]] = []  # List to store keypoints for a
 
 mp_pose = mp.solutions.pose
 with mp_pose.Pose(static_image_mode=True,
-                  min_detection_confidence=0.5,
                   model_complexity=1) as pose:
     for image_np in tqdm(image_list):
         # Perform pose estimation on the current image
@@ -88,8 +87,8 @@ with mp_pose.Pose(static_image_mode=True,
 
         # Extract keypoints (x, y, z, visibility) for each detected landmark
         for landmark in result.pose_landmarks.landmark:
-            x = landmark.x
-            y = landmark.y
+            x = landmark.x  # Horizontal axis (0 is the left)
+            y = landmark.y  # Vertical axis (0 is the top)
             z = landmark.z
             confidence = landmark.visibility
 
@@ -105,21 +104,19 @@ for i in reversed(range(len(blazepose_results))):
         del image_list[i]
         del label_list[i]
 
-# %% Normalize BlazePose results by scaling x and y to image dimensions and normalizing to [0, 1]
+# %% Normalize the BlazePose results: (x, y) using MinMaxScaler and (z) using L2 normalization
 blazepose_results_np = np.array(blazepose_results)
 
-for result_np, image in zip(blazepose_results_np, image_list):
-    x = result_np[:, 0]
-    y = result_np[:, 1]
-
-    # Scale x to image width, and y to image height
-    x *= image.shape[1]
-    y *= image.shape[0]
+for result_np in blazepose_results_np:
+    x, y, z, confidence = result_np.T
 
     # Normalize x and y to the range [0, 1]
     scaler = MinMaxScaler()
-    result_np[:, 0] = scaler.fit_transform(x.reshape(-1, 1)).flatten()  # Normalize x
-    result_np[:, 1] = scaler.fit_transform(y.reshape(-1, 1)).flatten()  # Normalize y
+    x[:] = scaler.fit_transform(x.reshape(-1, 1)).ravel()  # Normalize x
+    y[:] = scaler.fit_transform(y.reshape(-1, 1)).ravel()  # Normalize y
+
+    # Normalize the z column to a unit vector
+    z /= np.linalg.norm(z)
 
 
 # %% Define the Dataset class
