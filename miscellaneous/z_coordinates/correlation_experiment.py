@@ -58,6 +58,7 @@ axes[1].set_title('After Normalization')
 
 # Configure axes labels, limits, and legends
 for i in range(2):
+    axes[i].axhline(y=0, color='black', linestyle='--')  # Add a reference line at y = 0
     axes[i].set_xlabel('Body Part Class (Index: 0-32)')
     axes[i].set_ylabel('Predicted Z-Coordinate')
     axes[i].set_xlim(0, 32)
