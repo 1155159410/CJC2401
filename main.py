@@ -221,16 +221,24 @@ optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=0
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=30)
 
 
-# %% Helper function to count the number of correct predictions in a batch
-def count_correct_predictions(output_batch: torch.tensor, label_batch: torch.tensor) -> int:
+# %% Helper function to convert raw model output to predicted labels
+def logits_to_labels(output_batch: torch.tensor) -> torch.tensor:
     # Get the predicted posture class
     pred_posture_class = output_batch[:, :, 0].argmax(dim=1, keepdim=True)
 
-    # Check the predicted correctness (gather the correctness logits and threshold at 0.5)
-    pred_correctness = output_batch[:, :, 1].gather(dim=1, index=pred_posture_class) > 0.5
+    # Check the predicted correctness (gather the correctness logits and threshold at 0)
+    pred_correctness = output_batch[:, :, 1].gather(dim=1, index=pred_posture_class) > 0
 
     # Stack the predicted posture class and correctness horizontally to form the predicted labels
     pred_labels = torch.hstack([pred_posture_class, pred_correctness])
+
+    return pred_labels
+
+
+# %% Helper function to count the number of correct predictions in a batch
+def count_correct_predictions(output_batch: torch.tensor, label_batch: torch.tensor) -> int:
+    # Convert raw model output to predicted labels
+    pred_labels = logits_to_labels(output_batch)
 
     # Compare predicted labels with actual labels and count the number of fully correct predictions
     num_correct = torch.sum(torch.all(pred_labels == label_batch, dim=1)).item()
@@ -391,6 +399,8 @@ print(f'\nCheckpoint loaded from "{checkpoint_path}"')
 model.eval()
 test_loss = 0
 test_correct = 0
+test_true_labels = []
+test_pred_labels = []
 
 with torch.no_grad():
     for inputs, labels in test_loader:
@@ -406,6 +416,10 @@ with torch.no_grad():
 
         # Record correct count
         test_correct += count_correct_predictions(outputs, labels)
+
+        # Store true and predicted labels
+        test_true_labels.extend(labels.tolist())
+        test_pred_labels.extend(logits_to_labels(outputs).tolist())
 
 # Calculate the average test loss and accuracy
 avg_test_loss = test_loss / len(test_loader)
