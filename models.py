@@ -9,43 +9,32 @@ OUT_SHAPE = (4, 2)  # (No. of posture classes, 2)
 
 class MLP(nn.Module):
     """
-    # Params: ~170K
+    # Params: 4664
     """
 
-    def __init__(self, dropout_p: float = 0.):
+    def __init__(self):
         super().__init__()
 
         # Input shape is (batch_size, 33, 4)
-        self.fc1 = nn.Linear(33 * 4, 224)
-        self.fc2 = nn.Linear(224, 224)
-        self.fc3 = nn.Linear(224, 256)
-        self.fc4 = nn.Linear(256, 128)
-        self.fc5 = nn.Linear(128, mul(*OUT_SHAPE))
-
-        # Dropout layer
-        self.dropout = nn.Dropout(p=dropout_p)
+        self.fc1 = nn.Linear(33 * 4, 32)
+        self.fc2 = nn.Linear(32, 8)
+        self.fc3 = nn.Linear(8, 8)
+        self.fc4 = nn.Linear(8, mul(*OUT_SHAPE))
 
         # Initialize weights
         self._init_weights()
 
     def forward(self, x):
-        # Mask the `confidence` column
-        x[..., 3] = 0
-
         # Flatten the input from (batch_size, 33, 4) to (batch_size, 33 * 4)
         x = torch.flatten(x, start_dim=1)
 
-        # Pass through fully connected layers with F.leaky_relu and Dropout
+        # Pass through fully connected layers with F.leaky_relu
         x = F.leaky_relu(self.fc1(x))
         x = F.leaky_relu(self.fc2(x))
-        x = self.dropout(x)
         x = F.leaky_relu(self.fc3(x))
-        x = self.dropout(x)
-        x = F.leaky_relu(self.fc4(x))
-        x = self.dropout(x)
 
         # Final fully connected layer to reduce to the desired output size
-        x = self.fc5(x)
+        x = self.fc4(x)
 
         # Reshape the output to (batch_size, *OUT_SHAPE)
         x = x.view(x.size(0), *OUT_SHAPE)
