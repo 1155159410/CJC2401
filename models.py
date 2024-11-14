@@ -100,75 +100,64 @@ class SharedMLPLite(nn.Module):
 
 class SharedMLP_(nn.Module):
     """
-    # Params: ~600K
+    # Params: 169704
 
-    LeakyReLU, Batch Normalization; SGD (lr=0.01, momentum=0.9, weight_decay=0.0001):
-    Epoch 172 | Train Loss: 0.0858, Train Accuracy: 0.9701 | Val Loss: 0.3906, Val Accuracy: 0.8934
-
-    LeakyReLU; SGD (lr=0.01, momentum=0.9, weight_decay=0.0001):
-    Epoch 182 | Train Loss: 0.1114, Train Accuracy: 0.9725 | Val Loss: 0.3520, Val Accuracy: 0.8824
+    An implementation of `SharedMLP` without using `Conv1D`.
     """
 
-    def __init__(self, dropout_p: float = 0., batch_norm: bool = False):
+    def __init__(self, dropout_p: float = 0.):
         super().__init__()
 
-        self.dropout_p = dropout_p
+        # Dropout layer
+        self.dropout = nn.Dropout(p=dropout_p)
 
         # Shared MLP for each keypoint's (x, y, z, confidence)
         self.point_mlp = nn.Sequential(
             nn.Linear(4, 16),
-            nn.BatchNorm1d(16) if batch_norm else nn.Identity(),
             nn.LeakyReLU(),
-            nn.Linear(16, 32),
-            nn.BatchNorm1d(32) if batch_norm else nn.Identity(),
-            nn.LeakyReLU(),
-            nn.Dropout(p=self.dropout_p)
+            nn.Linear(16, 16),
+            self.dropout
         )
 
-        # After processing all 33 keypoints, aggregate features
-        self.fc1 = nn.Linear(32 * 33, 512)
-        self.bn1 = nn.BatchNorm1d(512) if batch_norm else nn.Identity()
-        self.fc2 = nn.Linear(512, 256)
-        self.bn2 = nn.BatchNorm1d(256) if batch_norm else nn.Identity()
-        self.fc3 = nn.Linear(256, 64)
-        self.bn3 = nn.BatchNorm1d(64) if batch_norm else nn.Identity()
-        self.fc4 = nn.Linear(64, mul(*OUT_SHAPE))
+        # Fully connected layers
+        self.fc1 = nn.Linear(16 * 33, 256)
+        self.fc2 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, mul(*OUT_SHAPE))
 
-        self.dropout = nn.Dropout(p=self.dropout_p)
-
-        # Apply weight initialization
-        self._initialize_weights()
+        # Initialize weights
+        self._init_weights()
 
     def forward(self, x):
-        x[..., -1] = 0
+        # Mask the `confidence` column
+        x[..., 3] = 0
 
-        # Apply point-specific MLP to each row (keypoint)
-        batch_size, num_points, num_features = x.shape  # (batch_size, 33, 4)
+        # Unpack the input tensor dimensions
+        batch_size, num_points, num_features = x.shape
 
         # Process each keypoint independently using the shared MLP
-        x = self.point_mlp(x.view(-1, num_features))  # Shape: (batch_size * 33, 32)
+        x = self.point_mlp(x.view(-1, num_features))  # (batch_size * 33, 4) -> (batch_size * 33, out_features)
 
-        # Reshape back to (batch_size, 33, 32)
+        # Reshape back to (batch_size, 33, out_features)
         x = x.view(batch_size, num_points, -1)
 
         # Flatten the processed keypoints into a single vector for each sample
         x = torch.flatten(x, start_dim=1)
 
-        # Fully connected layers for aggregation
-        x = F.leaky_relu(self.bn1(self.fc1(x)))
+        # Pass through fully connected layers with F.leaky_relu and Dropout
+        x = F.leaky_relu(self.fc1(x))
+        x = self.dropout(x)
+        x = F.leaky_relu(self.fc2(x))
         x = self.dropout(x)
 
-        x = F.leaky_relu(self.bn2(self.fc2(x)))
-        x = self.dropout(x)
+        # Final fully connected layer to reduce to the desired output size
+        x = self.fc3(x)
 
-        x = F.leaky_relu(self.bn3(self.fc3(x)))
-        x = self.dropout(x)
+        # Reshape the output to (B, *OUT_SHAPE)
+        x = x.view(batch_size, *OUT_SHAPE)
 
-        output = self.fc4(x)
+        return x
 
-        return output.view(batch_size, *OUT_SHAPE)  # Reshape to (batch_size, *OUT_SHAPE)
-
-    def _initialize_weights(self):
+    def _init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.kaiming_normal_(m.weight, nonlinearity='leaky_relu')
@@ -178,7 +167,7 @@ class SharedMLP_(nn.Module):
 
 class SharedMLP(nn.Module):
     """
-    # Params: ~170K
+    # Params: 169704
     """
 
     def __init__(self, dropout_p: float = 0.):
