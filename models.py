@@ -9,41 +9,50 @@ OUT_SHAPE = (4, 2)  # (No. of posture classes, 2)
 
 class MLP(nn.Module):
     """
-    # Params: ~800K
-
-    ReLU; SGD (lr=0.01, momentum=0.9, weight_decay=0.0001):
-    - Epoch 183 | Train Loss: 0.1239, Train Acc: 0.9622 | Val Loss: 0.3346, Val Acc: 0.8676
-
-    LeakyReLU; SGD (lr=0.01, momentum=0.9, weight_decay=0.0001):
-    - Epoch 163 | Train Loss: 0.0796, Train Acc: 0.9732 | Val Loss: 0.3571, Val Acc: 0.8787
+    # Params: ~170K
     """
 
-    def __init__(self):
+    def __init__(self, dropout_p: float = 0.):
         super().__init__()
 
-        # Input size is 33 * 4 = 132
-        self.fc1 = nn.Linear(132, 1024)
-        self.fc2 = nn.Linear(1024, 512)
-        self.fc3 = nn.Linear(512, 256)
-        self.fc4 = nn.Linear(256, 64)
-        self.fc5 = nn.Linear(64, mul(*OUT_SHAPE))
+        # Input shape is (batch_size, 33, 4)
+        self.fc1 = nn.Linear(33 * 4, 224)
+        self.fc2 = nn.Linear(224, 224)
+        self.fc3 = nn.Linear(224, 256)
+        self.fc4 = nn.Linear(256, 128)
+        self.fc5 = nn.Linear(128, mul(*OUT_SHAPE))
 
-        # Apply weight initialization
-        self._initialize_weights()
+        # Dropout layer
+        self.dropout = nn.Dropout(p=dropout_p)
+
+        # Initialize weights
+        self._init_weights()
 
     def forward(self, x):
-        # Flatten the input from (batch_size, 33, 4) to (batch_size, 132)
+        # Mask the `confidence` column
+        x[..., 3] = 0
+
+        # Flatten the input from (batch_size, 33, 4) to (batch_size, 33 * 4)
         x = torch.flatten(x, start_dim=1)
 
+        # Pass through fully connected layers with F.leaky_relu and Dropout
         x = F.leaky_relu(self.fc1(x))
         x = F.leaky_relu(self.fc2(x))
+        x = self.dropout(x)
         x = F.leaky_relu(self.fc3(x))
+        x = self.dropout(x)
         x = F.leaky_relu(self.fc4(x))
+        x = self.dropout(x)
+
+        # Final fully connected layer to reduce to the desired output size
         x = self.fc5(x)
 
-        return x.view(-1, *OUT_SHAPE)  # Reshape to (batch_size, *OUT_SHAPE)
+        # Reshape the output to (batch_size, *OUT_SHAPE)
+        x = x.view(x.size(0), *OUT_SHAPE)
 
-    def _initialize_weights(self):
+        return x
+
+    def _init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.kaiming_normal_(m.weight, nonlinearity='leaky_relu')
