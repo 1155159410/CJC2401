@@ -238,6 +238,22 @@ def count_correct_predictions(output_batch: torch.tensor, label_batch: torch.ten
     return num_correct
 
 
+# %% Helper function to save a checkpoint
+def save_checkpoint():
+    checkpoint_path = f"./checkpoint_epoch_{num_epochs:06d}.pth"
+    torch.save({
+        'num_epochs': num_epochs,
+        'model': model,
+        'optimizer': optimizer,
+        'scheduler': scheduler,
+        'train_losses': train_losses,
+        'val_losses': val_losses,
+        'train_accuracies': train_accuracies,
+        'val_accuracies': val_accuracies,
+    }, checkpoint_path)
+    print(f'\rCheckpoint saved at "{checkpoint_path}"')
+
+
 # %% Initialize variables for the main loop
 num_epochs = 0
 train_losses, val_losses = [], []
@@ -323,19 +339,11 @@ while scheduler.get_last_lr()[0] > 1e-5:
 
     # Save checkpoint every 20 epochs
     if num_epochs % 20 == 0:
-        checkpoint_path = f"./checkpoint_epoch_{num_epochs:06d}.pth"
-        torch.save({
-            'num_epochs': num_epochs,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'train_losses': train_losses,
-            'val_losses': val_losses,
-            'train_accuracies': train_accuracies,
-            'val_accuracies': val_accuracies,
-        }, checkpoint_path)
-        print(f'\rCheckpoint saved at "{checkpoint_path}"')
+        save_checkpoint()
 
     print()
+else:
+    save_checkpoint()
 
 # %% Plot the loss and accuracy curves
 fig, axes = plt.subplots(1, 2, figsize=(12, 5), dpi=300)
@@ -369,8 +377,9 @@ checkpoint = torch.load(checkpoint_path)
 
 # Restore the states and variables
 num_epochs = checkpoint['num_epochs']
-model.load_state_dict(checkpoint['model_state_dict'])
-optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+model = checkpoint['model']
+optimizer = checkpoint['optimizer']
+scheduler = checkpoint['scheduler']
 train_losses = checkpoint['train_losses']
 val_losses = checkpoint['val_losses']
 train_accuracies = checkpoint['train_accuracies']
