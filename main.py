@@ -386,3 +386,30 @@ train_accuracies = checkpoint['train_accuracies']
 val_accuracies = checkpoint['val_accuracies']
 
 print(f'\nCheckpoint loaded from "{checkpoint_path}"')
+
+# %% Evaluate the model on the test set
+model.eval()
+test_loss = 0
+test_correct = 0
+
+with torch.no_grad():
+    for inputs, labels in test_loader:
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+
+        # Forward pass
+        outputs = model(inputs)
+        loss = loss_func(outputs, labels)
+
+        # Record loss
+        test_loss += loss.item()
+
+        # Record correct count
+        test_correct += count_correct_predictions(outputs, labels)
+
+# Calculate the average test loss and accuracy
+avg_test_loss = test_loss / len(test_loader)
+avg_test_accuracy = test_correct / len(test_loader.dataset)
+
+# Print the test results
+print(f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {avg_test_accuracy:.4f}")
