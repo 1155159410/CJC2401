@@ -194,7 +194,7 @@ device = torch.device('mps' if torch.backends.mps.is_available()
 
 # %% Instantiate the model [Configurable]
 importlib.reload(models)
-model = models.SharedMLP()
+model = models.SharedMLP(dropout_p=0.1)
 model = model.to(device)
 
 
@@ -217,8 +217,8 @@ def loss_func(output_batch, label_batch):
 
 
 # %% Define the optimizer and learning rate scheduler [Configurable]
-optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0001)
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10)
+optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.00001)
+scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=30)
 
 
 # %% Helper function to count the number of correct predictions in a batch
