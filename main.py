@@ -192,7 +192,7 @@ test_loader = DataLoader(test_dataset, batch_size=32)
 device = torch.device('mps' if torch.backends.mps.is_available()
                       else 'cuda' if torch.cuda.is_available() else 'cpu')
 
-# %% Instantiate the model
+# %% Instantiate the model [Configurable]
 importlib.reload(models)
 model = models.SharedMLP()
 model = model.to(device)
@@ -216,7 +216,7 @@ def loss_func(output_batch, label_batch):
     return total_loss
 
 
-# %% Define the optimizer and learning rate scheduler
+# %% Define the optimizer and learning rate scheduler [Configurable]
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0001)
 scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10)
 
@@ -259,7 +259,7 @@ num_epochs = 0
 train_losses, val_losses = [], []
 train_accuracies, val_accuracies = [], []
 
-# %% Main training loop
+# %% ================ Main Training Loop ================
 # Trim the record lists to avoid length inconsistency caused by a KeyboardInterrupt in the main loop
 train_losses = train_losses[:num_epochs]
 val_losses = val_losses[:num_epochs]
