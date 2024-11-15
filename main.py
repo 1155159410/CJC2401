@@ -379,7 +379,7 @@ plt.subplots_adjust(wspace=0.3)
 plt.show()
 
 # %% Load a checkpoint
-checkpoint_path = "./checkpoint_epoch_000020.pth"
+checkpoint_path = "./checkpoints/27.pth"
 
 # Load the checkpoint dictionary
 checkpoint = torch.load(checkpoint_path)
