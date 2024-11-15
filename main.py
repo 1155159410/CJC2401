@@ -19,6 +19,8 @@ import numpy as np
 import torch
 from PIL import Image
 from matplotlib import pyplot as plt
+from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.metrics import confusion_matrix
 from sklearn.preprocessing import MinMaxScaler
 from torch import nn
 from torch import optim
@@ -428,3 +430,33 @@ avg_test_accuracy = test_correct / len(test_loader.dataset)
 
 # Print the test results
 print(f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {avg_test_accuracy:.4f}")
+
+# %% Plot the confusion matrix
+# Construct class names for the confusion matrix
+class_names: list[str] = []
+for validity in ('Correct', 'Incorrect'):
+    for posture_name in ('Downdog', 'Plank', 'Side Plank', 'Warrior II'):
+        class_names.append(f"{posture_name} ({validity})")
+
+
+# Define a function to map a label to its corresponding class name's index
+def label_to_index(label) -> int:
+    posture_class, correctness = label
+    return posture_class + (0 if correctness == 1 else 4)
+
+
+# Convert true and predicted labels to indexes
+test_true_indexes = list(map(label_to_index, test_true_labels))
+test_pred_indexes = list(map(label_to_index, test_pred_labels))
+
+# Generate confusion matrix
+conf_matrix = confusion_matrix(test_true_indexes, test_pred_indexes)
+
+# Plot the confusion matrix
+fig, ax = plt.subplots(dpi=300)
+disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=class_names)
+disp.plot(cmap=plt.cm.Blues, ax=ax)
+plt.xticks(rotation=45, ha='right')
+plt.title("Confusion Matrix on the Test Set")
+plt.tight_layout()
+plt.show()
