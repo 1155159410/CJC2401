@@ -196,6 +196,7 @@ device = torch.device('mps' if torch.backends.mps.is_available()
 importlib.reload(models)
 model = models.SharedMLP(dropout_p=0.1)
 model = model.to(device)
+print("No. of params (including bias):", sum(p.numel() for p in model.parameters()))
 
 
 # %% Define the loss function
