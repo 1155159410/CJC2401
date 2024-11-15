@@ -435,7 +435,7 @@ print(f"Test Loss: {avg_test_loss:.4f}, Test Accuracy: {avg_test_accuracy:.4f}")
 # Construct class names for the confusion matrix
 class_names: list[str] = []
 for validity in ('Correct', 'Incorrect'):
-    for posture_name in ('Downdog', 'Plank', 'Side Plank', 'Warrior II'):
+    for posture_name in ('Down Dog', 'Plank', 'Side Plank', 'Warrior II'):
         class_names.append(f"{posture_name} ({validity})")
 
 
