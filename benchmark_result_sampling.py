@@ -10,7 +10,7 @@ row_labels = ['Down Dog', 'Plank', 'Tree', 'Warrior']
 col_labels = ['PoseNet', 'MoveNet', 'BlazePose']
 
 # Create a 4x3 grid of subplots (4 rows, 3 columns)
-fig, axes = plt.subplots(4, 3, figsize=(12, 12))
+fig, axes = plt.subplots(4, 3, figsize=(12, 12), dpi=300)
 
 # Loop through each row (images) and each column (folders/models)
 for row in range(4):  # Loop through all 4 rows (poses)
@@ -26,12 +26,12 @@ for row in range(4):  # Loop through all 4 rows (poses)
 
 # Add column labels (model names) at the top of each column
 for col in range(3):
-    axes[0, col].set_title(col_labels[col], fontsize=14)
+    axes[0, col].set_title(col_labels[col], fontsize=20)
 
 # Add row labels (pose names) on the left-hand side of each row
 for row in range(4):
     axes[row, 0].text(-0.1, 0.5, row_labels[row],
-                      fontsize=14, va='center', ha='right', transform=axes[row, 0].transAxes)
+                      fontsize=20, va='center', ha='right', transform=axes[row, 0].transAxes)
 
 plt.tight_layout()
 plt.show()
