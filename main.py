@@ -132,7 +132,7 @@ def show_image(image_path):
 
     # Show the image
     plt.imshow(img)
-    plt.axis('off')  # Hide axes
+    plt.title(image_path)
     plt.show()
 
 
