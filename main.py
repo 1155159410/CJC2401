@@ -39,7 +39,7 @@ class PostureCorrectionSystem:
         self.blazepose = mp.solutions.pose.Pose(static_image_mode=True, model_complexity=1)
 
         # Load the pre-trained neural network model for posture classification
-        self.model = torch.load(checkpoint_path)['model'].to(self.device).eval()
+        self.model = torch.load(checkpoint_path, map_location=self.device)['model'].eval()
 
     def __del__(self):
         self.blazepose.close()
