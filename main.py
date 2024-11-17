@@ -181,3 +181,6 @@ for image_path, image_np in zip(image_paths, image_list):
 
 end_time = time()
 print(f"Total time to process {len(image_paths)} images: {end_time - start_time:.2f} seconds.")
+
+# %% Clean up resources
+del posture_system
