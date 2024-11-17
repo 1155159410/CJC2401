@@ -13,6 +13,8 @@ from PIL import Image
 from numpy import ndarray
 from sklearn.preprocessing import MinMaxScaler
 from torch.nn import functional as F
+from matplotlib import pyplot as plt
+from matplotlib import image as mpimg
 
 
 # %% Posture Correction System Class
@@ -121,6 +123,17 @@ class PostureCorrectionSystem:
         z /= np.linalg.norm(z)
 
         return keypoints
+
+
+# %% Function to display an image from a file path
+def show_image(image_path):
+    # Load the image
+    img = mpimg.imread(image_path)
+
+    # Show the image
+    plt.imshow(img)
+    plt.axis('off')  # Hide axes
+    plt.show()
 
 
 # %% Load and process images
