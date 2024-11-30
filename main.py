@@ -148,16 +148,16 @@ image_paths = [
     "./dataset/downdog/negative/frame_10149.png",
     "./dataset/side_plank/positive/frame_00100.png",
     "./dataset/side_plank/positive/frame_003.png",
-    "./dataset/plank/negative/frame_3.png",
     "./dataset/warrior_ii/positive/0249.png",
     "./dataset/warrior_ii/negative/frame_00238.png",
     "./dataset/warrior_ii/negative/frame_00191.png",
-    "./dataset/warrior_ii/negative/frame_00256.png",
-    "./dataset/warrior_ii/positive/0155.png",
     "./dataset/side_plank/positive/frame_0032.png",
     "./dataset/plank/positive/frame_125.png",
     "./dataset/side_plank/positive/frame_00140.png",
-    "./dataset/plank/positive/019.png",
+    "dataset/warrior_ii/positive/0155.png",
+    "dataset/warrior_ii/negative/frame_00256.png",
+    "dataset/plank/positive/019.png",
+    "dataset/plank/negative/ba_030.png",
 ]
 
 # Load images into a list of NumPy arrays
