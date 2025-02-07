@@ -4,8 +4,11 @@ import warnings
 # Suppress all Python warnings (global)
 warnings.filterwarnings("ignore")
 
-from time import time
+import queue
+import threading
+import time
 
+import cv2
 import mediapipe as mp
 import numpy as np
 import torch
@@ -15,6 +18,65 @@ from sklearn.preprocessing import MinMaxScaler
 from torch.nn import functional as F
 from matplotlib import pyplot as plt
 from matplotlib import image as mpimg
+
+
+# %% Camera Class
+class Camera:
+    def __init__(self):
+        self._cap = None
+        self._thread = None  # Thread for capturing frames
+        self._running = False  # Flag to control thread execution
+
+    def start(self, buffer: queue.Queue[tuple[np.ndarray, float]]) -> None:
+        """
+        Starts the camera thread and begins capturing frames.
+
+        :param buffer: A queue where captured frames and timestamps will be placed.
+        If the queue is full, new frames will be dropped.
+        """
+
+        def thread_func():
+            while self._running:  # Continuously capture frames
+                ret, frame = self._cap.read()  # Read a frame
+                if not ret:  # If frame read fails
+                    print("Failed to get frame")
+                    break
+
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Convert to RGB
+                timestamp = time.time()
+
+                try:
+                    buffer.put((rgb_frame, timestamp), block=False)  # Add frame to buffer
+                except queue.Full:
+                    pass  # Drop the frame if the buffer is full
+
+        if self._running:
+            return  # Prevent multiple starts
+
+        self._cap = cv2.VideoCapture(0)  # Open camera
+        if not self._cap.isOpened():  # Check if camera is opened successfully
+            raise RuntimeError("Camera open failed")
+
+        self._running = True  # Start thread
+        self._thread = threading.Thread(target=thread_func)
+        self._thread.start()
+
+    def stop(self):
+        """
+        Stops the camera thread and releases any resources.
+        """
+        self._running = False  # Stop thread
+
+        if self._thread is not None:
+            self._thread.join()  # Wait for thread to finish
+            self._thread = None
+
+        if self._cap is not None:
+            self._cap.release()  # Release camera resources
+            self._cap = None
+
+    def __del__(self):
+        self.stop()  # Cleanup on object deletion
 
 
 # %% Posture Correction System Class
@@ -173,13 +235,13 @@ posture_system = PostureCorrectionSystem()
 print(flush=True)
 
 # %% Process each image and display results
-start_time = time()
+start_time = time.time()
 for image_path, image_np in zip(image_paths, image_list):
     print(f"Processing image: '{image_path}'")
     posture_system.process_image(image_np)
     print()
 
-end_time = time()
+end_time = time.time()
 print(f"Total time to process {len(image_paths)} images: {end_time - start_time:.2f} seconds.")
 
 # %% Clean up resources
