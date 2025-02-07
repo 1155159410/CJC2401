@@ -48,7 +48,7 @@ class Camera:
                 try:
                     buffer.put((rgb_frame, timestamp), block=False)  # Add frame to buffer
                 except queue.Full:
-                    pass  # Drop the frame if the buffer is full
+                    continue  # Drop the frame if the buffer is full
 
         if self._running:
             return  # Prevent multiple starts
@@ -74,9 +74,6 @@ class Camera:
         if self._cap is not None:
             self._cap.release()  # Release camera resources
             self._cap = None
-
-    def __del__(self):
-        self.stop()  # Cleanup on object deletion
 
 
 # %% Posture Correction System Class
@@ -108,7 +105,6 @@ class PostureCorrectionSystem:
 
     def __del__(self):
         self.blazepose.close()
-        self.stop_thread()
 
     def first_stage(self, image_np: ndarray) -> list[list[float]]:
         """
@@ -143,7 +139,7 @@ class PostureCorrectionSystem:
 
         return posture_prob.cpu().numpy(), correctness_prob.cpu().numpy()
 
-    def process_image(self, image_np: ndarray) -> tuple[int, int]:
+    def process_image(self, image_np: ndarray) -> tuple[int, int] | None:
         """
         Full pipeline to process an image:
         1. Extract keypoints using BlazePose.
@@ -155,7 +151,7 @@ class PostureCorrectionSystem:
 
         if not keypoints:
             print("No BlazePose landmarks detected in the image.")
-            return
+            return None
 
         # Normalize keypoints
         keypoints_np = np.array(keypoints)
@@ -175,19 +171,21 @@ class PostureCorrectionSystem:
         print(f"Correctness probabilities: {correctness_prob.tolist()}")
         print(f"Predicted posture: {predicted_posture}")
         print(f"Predicted feedback: {predicted_feedback}")
-        print()
 
         return predicted_posture_idx, predicted_feedback_idx
 
     def start_thread(self, in_queue: queue.Queue, out_queue: queue.Queue) -> None:
         def thread_func():
             while self._running:
-                entry = in_queue.get()  # Get next item from input queue
+                try:
+                    entry = in_queue.get(timeout=1.)  # Get next item from input queue
+                except queue.Empty:
+                    continue
 
                 rgb_frame = entry[0]  # Extract RGB image frame
                 result = self.process_image(rgb_frame)  # Process the image
 
-                out_queue.put((entry, result))  # Send result to output queue
+                out_queue.put(entry + (result,))  # Send result to output queue
 
         if self._running:
             return  # Prevent multiple starts
@@ -219,6 +217,37 @@ class PostureCorrectionSystem:
         z /= np.linalg.norm(z)
 
         return keypoints
+
+
+# %% TODO
+in_queue = queue.Queue(maxsize=30)
+out_queue = queue.Queue()
+
+camera = Camera()
+posture_system = PostureCorrectionSystem()
+
+camera.start(in_queue)
+posture_system.start_thread(in_queue, out_queue)
+
+while cv2.waitKey(1) != ord('q'):  # Up to 1000 loops per second
+    rgb_frame, timestamp, result = out_queue.get()
+
+    bgr_frame = cv2.cvtColor(rgb_frame, cv2.COLOR_RGB2BGR)
+    if result is not None:
+        posture_idx, feedback_idx = result
+
+    cv2.imshow("Posture Correction System", bgr_frame)
+    print("Delay", time.time() - timestamp)
+    print()
+
+cv2.destroyAllWindows()
+camera.stop()
+print("Camera stopped")
+posture_system.stop_thread()
+print("System stopped")
+del posture_system
+print("System deleted")
+quit()
 
 
 # %% Function to display an image from a file path
