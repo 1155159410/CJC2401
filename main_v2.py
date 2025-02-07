@@ -103,8 +103,12 @@ class PostureCorrectionSystem:
         # Load the pre-trained neural network model for posture classification
         self.model = torch.load(checkpoint_path, map_location=self.device)['model'].eval()
 
+        self._thread = None
+        self._running = False
+
     def __del__(self):
         self.blazepose.close()
+        self.stop_thread()
 
     def first_stage(self, image_np: ndarray) -> list[list[float]]:
         """
@@ -139,7 +143,7 @@ class PostureCorrectionSystem:
 
         return posture_prob.cpu().numpy(), correctness_prob.cpu().numpy()
 
-    def process_image(self, image_np: ndarray):
+    def process_image(self, image_np: ndarray) -> tuple[int, int]:
         """
         Full pipeline to process an image:
         1. Extract keypoints using BlazePose.
@@ -160,14 +164,44 @@ class PostureCorrectionSystem:
         # Classify posture and correctness
         posture_prob, correctness_prob = self.second_stage(normalized_keypoints)
 
+        predicted_posture_idx = posture_prob.argmax()
+        predicted_feedback_idx = round(correctness_prob[predicted_posture_idx])
+
         # Display results
-        predicted_posture = self.POSTURE_NAMES[posture_prob.argmax()]
-        predicted_feedback = self.FEEDBACKS[round(correctness_prob[posture_prob.argmax()])]
+        predicted_posture = self.POSTURE_NAMES[predicted_posture_idx]
+        predicted_feedback = self.FEEDBACKS[predicted_feedback_idx]
 
         print(f"Posture classification probabilities: {posture_prob.tolist()}")
         print(f"Correctness probabilities: {correctness_prob.tolist()}")
         print(f"Predicted posture: {predicted_posture}")
         print(f"Predicted feedback: {predicted_feedback}")
+        print()
+
+        return predicted_posture_idx, predicted_feedback_idx
+
+    def start_thread(self, in_queue: queue.Queue, out_queue: queue.Queue) -> None:
+        def thread_func():
+            while self._running:
+                entry = in_queue.get()  # Get next item from input queue
+
+                rgb_frame = entry[0]  # Extract RGB image frame
+                result = self.process_image(rgb_frame)  # Process the image
+
+                out_queue.put((entry, result))  # Send result to output queue
+
+        if self._running:
+            return  # Prevent multiple starts
+
+        self._running = True
+        self._thread = threading.Thread(target=thread_func)
+        self._thread.start()
+
+    def stop_thread(self):
+        self._running = False
+
+        if self._thread is not None:
+            self._thread.join()
+            self._thread = None
 
     @staticmethod
     def normalize_keypoints(keypoints: ndarray) -> ndarray:
