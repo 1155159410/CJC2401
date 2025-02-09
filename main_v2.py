@@ -232,17 +232,68 @@ class PostureCorrectionSystem:
         return keypoints
 
 
+# %% Frame Processor Class
+class FrameProcessor:
+    KEYPOINT_EDGE_IDX_TO_COLOR = {(0, 2): (191, 0, 191), (0, 5): (0, 191, 191), (2, 7): (191, 0, 191),
+                                  (5, 8): (0, 191, 191), (0, 11): (191, 0, 191), (0, 12): (0, 191, 191),
+                                  (11, 13): (191, 0, 191), (13, 15): (191, 0, 191), (12, 14): (0, 191, 191),
+                                  (14, 16): (0, 191, 191), (11, 12): (191, 191, 0), (11, 23): (191, 0, 191),
+                                  (12, 24): (0, 191, 191), (23, 24): (191, 191, 0), (23, 25): (191, 0, 191),
+                                  (25, 27): (191, 0, 191), (24, 26): (0, 191, 191), (26, 28): (0, 191, 191)}
+
+    def __init__(self, rgb_frame) -> None:
+        self.rgb_frame = rgb_frame.copy()
+
+    def draw_skeletons(self, keypoints: np.ndarray) -> None:
+        height, width, _ = self.rgb_frame.shape
+        longest_side = max(height, width)
+
+        # Retrieve values from the output
+        kpts_x = (keypoints[:, 0] * width).astype(int)
+        kpts_y = (keypoints[:, 1] * height).astype(int)
+        kpts_scores = keypoints[:, 3]
+
+        # Pair up keypoints to form edges
+        for edge_pair, color in self.KEYPOINT_EDGE_IDX_TO_COLOR.items():
+            edge_pair = list(edge_pair)
+
+            x_start, x_end = kpts_x[edge_pair]
+            y_start, y_end = kpts_y[edge_pair]
+
+            cv2.line(
+                self.rgb_frame,
+                [x_start, y_start],
+                [x_end, y_end],
+                color,
+                thickness=max(longest_side // 300, 1)
+            )
+
+        # Plot the keypoints
+        for i in set(sum(self.KEYPOINT_EDGE_IDX_TO_COLOR.keys(), ())):
+            coord = kpts_x[i], kpts_y[i]
+            cv2.circle(
+                self.rgb_frame,
+                coord,
+                radius=max(longest_side // 150, 2),
+                color=(255, 20, 147),
+                thickness=-1
+            )
+
+
 # %% TODO
-in_queue = queue.Queue(maxsize=30)
-out_queue = queue.Queue()
+def v2():
+    in_queue: queue.Queue[dict] = queue.Queue(maxsize=30)
+    out_queue: queue.Queue[dict] = queue.Queue()
 
-camera = Camera()
-posture_system = PostureCorrectionSystem()
+    camera = Camera()
+    posture_system = PostureCorrectionSystem()
 
-camera.start(in_queue)
-posture_system.start_thread(in_queue, out_queue)
+    camera.start(in_queue)
+    posture_system.start_thread(in_queue, out_queue)
 
-while cv2.waitKey(1) != ord('q'):  # Up to 1000 loops per second
+    frame_times = []
+
+    while cv2.waitKey(1) != ord('q'):  # Up to 1000 loops per second
         item: dict = out_queue.get()
 
         frame_processor = FrameProcessor(item['rgb_frame'])
@@ -250,18 +301,28 @@ while cv2.waitKey(1) != ord('q'):  # Up to 1000 loops per second
             frame_processor.draw_skeletons(keypoints)
         rgb_frame = frame_processor.rgb_frame
 
-    print("Delay", time.time() - timestamp)
-    print()
         bgr_frame = cv2.cvtColor(rgb_frame, cv2.COLOR_RGB2BGR)
         cv2.imshow("Posture Correction System", bgr_frame)
 
-cv2.destroyAllWindows()
-camera.stop()
-print("Camera stopped")
-posture_system.stop_thread()
-print("System stopped")
-del posture_system
-print("System deleted")
-quit()
+        current_time = time.time()
+        while frame_times and frame_times[0] < current_time - 1:
+            frame_times.pop(0)
+        frame_times.append(item['timestamp'])
+        fps = len(frame_times)
+
+        print("Delay", current_time - item['timestamp'])
+        print("FPS", fps)
+        print()
+
+    cv2.destroyAllWindows()
+    camera.stop()
+    print("Camera stopped")
+    posture_system.stop_thread()
+    print("System stopped")
+    del posture_system
+    print("System deleted")
+    quit()
 
 
+if __name__ == "__main__":
+    v2()
