@@ -1,6 +1,6 @@
 """
 A simple script to test the webcam and determine its maximum FPS.
-Test environment result: ~30 FPS.
+Test environment results: ~30 FPS (with a 0.001s delay).
 """
 
 import time
