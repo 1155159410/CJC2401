@@ -12,12 +12,10 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import torch
-from PIL import Image
 from numpy import ndarray
 from sklearn.preprocessing import MinMaxScaler
+# noinspection PyPep8Naming
 from torch.nn import functional as F
-from matplotlib import pyplot as plt
-from matplotlib import image as mpimg
 
 
 # %% Camera Class
@@ -250,62 +248,3 @@ print("System deleted")
 quit()
 
 
-# %% Function to display an image from a file path
-def show_image(image_path):
-    # Load the image
-    img = mpimg.imread(image_path)
-
-    # Show the image
-    plt.imshow(img)
-    plt.title(image_path)
-    plt.show()
-
-
-# %% Load and process images
-image_paths = [
-    "./dataset/warrior_ii/positive/0326.png",
-    "./dataset/plank/positive/frame_71.png",
-    "./dataset/plank/positive/frame_293.png",
-    "./dataset/downdog/negative/frame01255.png",
-    "./dataset/warrior_ii/negative/frame_00185.png",
-    "./dataset/plank/negative/frame_322.png",
-    "./dataset/warrior_ii/negative/frame_00107.png",
-    "./dataset/downdog/negative/frame_10149.png",
-    "./dataset/side_plank/positive/frame_00100.png",
-    "./dataset/side_plank/positive/frame_003.png",
-    "./dataset/warrior_ii/positive/0249.png",
-    "./dataset/warrior_ii/negative/frame_00238.png",
-    "./dataset/warrior_ii/negative/frame_00191.png",
-    "./dataset/side_plank/positive/frame_0032.png",
-    "./dataset/plank/positive/frame_125.png",
-    "./dataset/side_plank/positive/frame_00140.png",
-    "dataset/warrior_ii/positive/0155.png",
-    "dataset/warrior_ii/negative/frame_00256.png",
-    "dataset/plank/positive/019.png",
-    "dataset/plank/negative/ba_030.png",
-]
-
-# Load images into a list of NumPy arrays
-image_list: list[ndarray] = []
-for image_path in image_paths:
-    image = Image.open(image_path)
-    image_rgb = image.convert('RGB')
-    image_np = np.array(image_rgb)
-    image_list.append(image_np)
-
-# %% Instantiate the Posture Correction System
-posture_system = PostureCorrectionSystem()
-print(flush=True)
-
-# %% Process each image and display results
-start_time = time.time()
-for image_path, image_np in zip(image_paths, image_list):
-    print(f"Processing image: '{image_path}'")
-    posture_system.process_image(image_np)
-    print()
-
-end_time = time.time()
-print(f"Total time to process {len(image_paths)} images: {end_time - start_time:.2f} seconds.")
-
-# %% Clean up resources
-del posture_system
