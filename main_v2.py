@@ -25,7 +25,7 @@ class Camera:
         self._thread = None  # Thread for capturing frames
         self._running = False  # Flag to control thread execution
 
-    def start(self, buffer: queue.Queue[tuple[np.ndarray, float]]) -> None:
+    def start(self, buffer: queue.Queue[dict]) -> None:
         """
         Starts the camera thread and begins capturing frames.
 
@@ -40,11 +40,13 @@ class Camera:
                     print("Failed to get frame")
                     break
 
-                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # Convert to RGB
-                timestamp = time.time()
+                item = {
+                    'rgb_frame': cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),  # Convert to RGB
+                    'timestamp': time.time(),
+                }
 
                 try:
-                    buffer.put((rgb_frame, timestamp), block=False)  # Add frame to buffer
+                    buffer.put(item, block=False)  # Add frame to buffer
                 except queue.Full:
                     continue  # Drop the frame if the buffer is full
 
@@ -104,6 +106,7 @@ class PostureCorrectionSystem:
     def __del__(self):
         self.blazepose.close()
 
+    # noinspection PyUnresolvedReferences
     def first_stage(self, image_np: ndarray) -> list[list[float]]:
         """
         Detects and extracts keypoints from an image using BlazePose.
@@ -115,6 +118,7 @@ class PostureCorrectionSystem:
         if result.pose_landmarks:
             for landmark in result.pose_landmarks.landmark:
                 keypoints.append([landmark.x, landmark.y, landmark.z, landmark.visibility])
+
         return keypoints
 
     def second_stage(self, keypoints: ndarray) -> tuple[ndarray, ndarray]:
@@ -137,7 +141,7 @@ class PostureCorrectionSystem:
 
         return posture_prob.cpu().numpy(), correctness_prob.cpu().numpy()
 
-    def process_image(self, image_np: ndarray) -> tuple[int, int] | None:
+    def process_image(self, image_np: ndarray, verbose: bool = False) -> dict:
         """
         Full pipeline to process an image:
         1. Extract keypoints using BlazePose.
@@ -145,45 +149,55 @@ class PostureCorrectionSystem:
         3. Classify posture and correctness.
         4. Print the results.
         """
-        keypoints = self.first_stage(image_np)
+        keypoints: list[list[float]] = self.first_stage(image_np)
 
         if not keypoints:
             print("No BlazePose landmarks detected in the image.")
-            return None
+            return {}
 
         # Normalize keypoints
-        keypoints_np = np.array(keypoints)
+        keypoints_np: np.ndarray = np.array(keypoints)
         normalized_keypoints = self.normalize_keypoints(keypoints_np)
 
         # Classify posture and correctness
         posture_prob, correctness_prob = self.second_stage(normalized_keypoints)
 
-        predicted_posture_idx = posture_prob.argmax()
-        predicted_feedback_idx = round(correctness_prob[predicted_posture_idx])
+        predicted_posture_idx: int = int(posture_prob.argmax())
+        predicted_feedback_idx: int = int(correctness_prob[predicted_posture_idx].round())
 
-        # Display results
-        predicted_posture = self.POSTURE_NAMES[predicted_posture_idx]
-        predicted_feedback = self.FEEDBACKS[predicted_feedback_idx]
+        predicted_posture: str = self.POSTURE_NAMES[predicted_posture_idx]
+        predicted_feedback: str = self.FEEDBACKS[predicted_feedback_idx]
 
-        print(f"Posture classification probabilities: {posture_prob.tolist()}")
-        print(f"Correctness probabilities: {correctness_prob.tolist()}")
-        print(f"Predicted posture: {predicted_posture}")
-        print(f"Predicted feedback: {predicted_feedback}")
+        # Print results
+        if verbose:
+            print(f"Posture classification probabilities: {posture_prob.tolist()}")
+            print(f"Correctness probabilities: {correctness_prob.tolist()}")
+            print(f"Predicted posture: {predicted_posture}")
+            print(f"Predicted feedback: {predicted_feedback}")
 
-        return predicted_posture_idx, predicted_feedback_idx
+        result = {
+            'keypoints': keypoints_np,  # np.ndarray
+            'posture_prob': posture_prob,  # np.ndarray
+            'correctness_prob': correctness_prob,  # np.ndarray
+            'predicted_posture': predicted_posture,  # str
+            'predicted_feedback': predicted_feedback,  # str
+        }
+
+        return result
 
     def start_thread(self, in_queue: queue.Queue, out_queue: queue.Queue) -> None:
         def thread_func():
             while self._running:
                 try:
-                    entry = in_queue.get(timeout=1.)  # Get next item from input queue
+                    item = in_queue.get(block=False)  # Get next item from input queue
                 except queue.Empty:
                     continue
 
-                rgb_frame = entry[0]  # Extract RGB image frame
+                rgb_frame = item['rgb_frame']  # Extract RGB image frame
                 result = self.process_image(rgb_frame)  # Process the image
+                item |= result
 
-                out_queue.put(entry + (result,))  # Send result to output queue
+                out_queue.put(item)  # Send result to output queue
 
         if self._running:
             return  # Prevent multiple starts
@@ -204,6 +218,7 @@ class PostureCorrectionSystem:
         """
         Normalizes the keypoints so that x, y are scaled to [0, 1] and z is normalized to a unit vector.
         """
+        keypoints = keypoints.copy()
         x, y, z, visibility = keypoints.T
 
         # Normalize x and y to the range [0, 1]
@@ -228,15 +243,17 @@ camera.start(in_queue)
 posture_system.start_thread(in_queue, out_queue)
 
 while cv2.waitKey(1) != ord('q'):  # Up to 1000 loops per second
-    rgb_frame, timestamp, result = out_queue.get()
+        item: dict = out_queue.get()
 
-    bgr_frame = cv2.cvtColor(rgb_frame, cv2.COLOR_RGB2BGR)
-    if result is not None:
-        posture_idx, feedback_idx = result
+        frame_processor = FrameProcessor(item['rgb_frame'])
+        if (keypoints := item.get('keypoints')) is not None:
+            frame_processor.draw_skeletons(keypoints)
+        rgb_frame = frame_processor.rgb_frame
 
-    cv2.imshow("Posture Correction System", bgr_frame)
     print("Delay", time.time() - timestamp)
     print()
+        bgr_frame = cv2.cvtColor(rgb_frame, cv2.COLOR_RGB2BGR)
+        cv2.imshow("Posture Correction System", bgr_frame)
 
 cv2.destroyAllWindows()
 camera.stop()
