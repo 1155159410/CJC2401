@@ -95,7 +95,7 @@ class PostureCorrectionSystem:
         )
 
         # Load the BlazePose model for keypoint detection
-        self.blazepose = mp.solutions.pose.Pose(static_image_mode=True, model_complexity=1)
+        self.blazepose = mp.solutions.pose.Pose(static_image_mode=False, model_complexity=1)
 
         # Load the pre-trained neural network model for posture classification
         self.model = torch.load(checkpoint_path, map_location=self.device)['model'].eval()
@@ -280,7 +280,7 @@ class FrameProcessor:
             )
 
 
-# %% Version 1: Sequential, no multithreading (~13 FPS)
+# %% Version 1: Sequential, no multithreading (~13 FPS; ~0.0339 s)
 def v1():
     # Open the default camera
     cap = cv2.VideoCapture(0)
@@ -329,7 +329,7 @@ def v1():
     print("System deleted")
 
 
-# %% Version 2: Multithreading (~27 FPS)
+# %% Version 2: Multithreading (~27 FPS; ~0.0455 s)
 def v2():
     in_queue: queue.Queue[dict] = queue.Queue(maxsize=1)  # Limit to at most 1 pending frame
     out_queue: queue.Queue[dict] = queue.Queue()
@@ -377,5 +377,5 @@ def v2():
 
 # %% Entry point
 if __name__ == "__main__":
-    v1()
+    # v1()
     v2()
