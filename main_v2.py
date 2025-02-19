@@ -1,5 +1,6 @@
 # %% Import necessary modules
 import warnings
+from typing import TypedDict
 
 # Suppress all Python warnings (global)
 warnings.filterwarnings("ignore")
@@ -16,6 +17,17 @@ from numpy import ndarray
 from sklearn.preprocessing import MinMaxScaler
 # noinspection PyPep8Naming
 from torch.nn import functional as F
+
+
+# %% Frame Type Hints Class
+class FrameInfo(TypedDict):
+    rgb_frame: np.ndarray
+    timestamp: float
+    keypoints: np.ndarray
+    posture_prob: np.ndarray
+    correctness_prob: np.ndarray
+    predicted_posture: str
+    predicted_feedback: str
 
 
 # %% Camera Class
