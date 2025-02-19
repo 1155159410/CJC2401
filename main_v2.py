@@ -256,6 +256,10 @@ class FrameProcessor:
     def __init__(self, rgb_frame) -> None:
         self.rgb_frame = rgb_frame.copy()
 
+    @property
+    def bgr_frame(self):
+        return cv2.cvtColor(self.rgb_frame, cv2.COLOR_RGB2BGR)
+
     def draw_skeletons(self, keypoints: np.ndarray) -> None:
         height, width, _ = self.rgb_frame.shape
         longest_side = max(height, width)
@@ -388,6 +392,6 @@ def v2():
 ...
 
 # %% Entry point
-if __name__ == "__main__":
+if __name__ == '__main__':
     # v1()
     v2()
