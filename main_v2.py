@@ -255,18 +255,18 @@ class FrameProcessor:
 
     def __init__(self, rgb_frame) -> None:
         self.rgb_frame = rgb_frame.copy()
+        self.height, self.width, _ = self.rgb_frame.shape
 
     @property
     def bgr_frame(self):
         return cv2.cvtColor(self.rgb_frame, cv2.COLOR_RGB2BGR)
 
     def draw_skeletons(self, keypoints: np.ndarray) -> None:
-        height, width, _ = self.rgb_frame.shape
-        longest_side = max(height, width)
+        longest_side = max(self.height, self.width)
 
         # Retrieve values from the output
-        kpts_x = (keypoints[:, 0] * width).astype(int)
-        kpts_y = (keypoints[:, 1] * height).astype(int)
+        kpts_x = (keypoints[:, 0] * self.width).astype(int)
+        kpts_y = (keypoints[:, 1] * self.height).astype(int)
         kpts_scores = keypoints[:, 3]
 
         # Pair up keypoints to form edges
@@ -295,8 +295,10 @@ class FrameProcessor:
                 thickness=-1
             )
 
-    def put_text(self, text, position, font_scale=4, color=(0, 0, 0), thickness=4):
-        text = str(text)
+    def put_fps(self, fps: int):
+        text = f"FPS: {fps}"
+
+        # Font, scale, thickness, and color
         font = cv2.FONT_HERSHEY_SIMPLEX
 
         # Calculate margin relatively
