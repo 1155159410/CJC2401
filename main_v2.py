@@ -323,15 +323,12 @@ class FrameProcessor:
 
     def extend_frame(self, ratio: float):
         extend_height = int(self.frame_h * ratio)
-        new_height = self.frame_h + extend_height
-
-        # Create a blank canvas larger than the frame
-        canvas = np.full((new_height, self.frame_w, 3), 255, dtype=np.uint8)
-
-        # Place the frame on the canvas
-        canvas[:self.frame_h, :self.frame_w] = self.rgb_frame
-
-        self.rgb_frame = canvas
+        self.rgb_frame = np.pad(
+            self.rgb_frame,
+            ((0, extend_height), (0, 0), (0, 0)),
+            'constant',
+            constant_values=0,
+        )
 
     def put_text(self, text: str, color: tuple, left: bool = True):
         usable_height = self.window_h - self.frame_h
@@ -339,7 +336,7 @@ class FrameProcessor:
             self.extend_frame(0.1)
             usable_height = self.window_h - self.frame_h
 
-        margin = int(usable_height * 0.1)  # Margin from the edges
+        margin = int(usable_height * 0.2)  # Margin from the edges
         max_text_height = usable_height - margin * 2  # Space after applying margins
 
         # Start with an arbitrary large scale and calculate its height
