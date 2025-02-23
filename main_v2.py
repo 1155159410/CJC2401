@@ -295,6 +295,37 @@ class FrameProcessor:
                 thickness=-1
             )
 
+    def put_text(self, text, position, font_scale=4, color=(0, 0, 0), thickness=4):
+        text = str(text)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+
+        # Calculate margin relatively
+        h, w, _ = self.rgb_frame.shape
+        margin = int(min(h, w) * 0.02)
+
+        # Get text size
+        (text_width, text_height), _ = cv2.getTextSize(text, font, font_scale, thickness)
+
+        # Determine position
+        positions = {
+            'top-left': (margin, margin + text_height),
+            'top-right': (w - text_width - margin, margin + text_height),
+            'bottom-left': (margin, h - margin),
+            'bottom-right': (w - text_width - margin, h - margin),
+        }
+        x, y = positions.get(position)
+
+        # Put text
+        cv2.putText(
+            self.rgb_frame,
+            text,
+            (x, y),
+            font,
+            font_scale,
+            color,
+            thickness,
+        )
+
 
 # %% Version 1: Sequential, no multithreading (~13 FPS; ~0.0339 s)
 def v1():
