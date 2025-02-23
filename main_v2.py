@@ -255,18 +255,26 @@ class FrameProcessor:
 
     def __init__(self, rgb_frame) -> None:
         self.rgb_frame = rgb_frame.copy()
-        self.height, self.width, _ = self.rgb_frame.shape
+        self.frame_h, self.frame_w, _ = self.rgb_frame.shape
+
+    @property
+    def window_h(self):
+        return self.rgb_frame.shape[0]
+
+    @property
+    def window_w(self):
+        return self.rgb_frame.shape[1]
 
     @property
     def bgr_frame(self):
         return cv2.cvtColor(self.rgb_frame, cv2.COLOR_RGB2BGR)
 
     def draw_skeletons(self, keypoints: np.ndarray) -> None:
-        longest_side = max(self.height, self.width)
+        longest_side = max(self.frame_h, self.frame_w)
 
         # Retrieve values from the output
-        kpts_x = (keypoints[:, 0] * self.width).astype(int)
-        kpts_y = (keypoints[:, 1] * self.height).astype(int)
+        kpts_x = (keypoints[:, 0] * self.frame_w).astype(int)
+        kpts_y = (keypoints[:, 1] * self.frame_h).astype(int)
         kpts_scores = keypoints[:, 3]
 
         # Pair up keypoints to form edges
@@ -300,33 +308,58 @@ class FrameProcessor:
 
         # Font, scale, thickness, and color
         font = cv2.FONT_HERSHEY_SIMPLEX
+        scale = 1.
+        thickness = 3
+        color = (180, 180, 180)  # Gray
 
-        # Calculate margin relatively
-        h, w, _ = self.rgb_frame.shape
-        margin = int(min(h, w) * 0.02)
+        # Get text size to align it properly
+        (text_width, text_height), _ = cv2.getTextSize(text, font, scale, thickness)
+        x = self.frame_w - text_width - 10  # Right-align with padding
+        y = 10 + text_height  # Position near the top
 
-        # Get text size
-        (text_width, text_height), _ = cv2.getTextSize(text, font, font_scale, thickness)
+        # Draw the text on the frame
+        cv2.putText(self.rgb_frame, text, (x, y), font, scale, (0, 0, 0), thickness * 3)
+        cv2.putText(self.rgb_frame, text, (x, y), font, scale, color, thickness)
 
-        # Determine position
-        positions = {
-            'top-left': (margin, margin + text_height),
-            'top-right': (w - text_width - margin, margin + text_height),
-            'bottom-left': (margin, h - margin),
-            'bottom-right': (w - text_width - margin, h - margin),
-        }
-        x, y = positions.get(position)
+    def extend_frame(self, ratio: float):
+        extend_height = int(self.frame_h * ratio)
+        new_height = self.frame_h + extend_height
 
-        # Put text
-        cv2.putText(
-            self.rgb_frame,
-            text,
-            (x, y),
-            font,
-            font_scale,
-            color,
-            thickness,
-        )
+        # Create a blank canvas larger than the frame
+        canvas = np.full((new_height, self.frame_w, 3), 255, dtype=np.uint8)
+
+        # Place the frame on the canvas
+        canvas[:self.frame_h, :self.frame_w] = self.rgb_frame
+
+        self.rgb_frame = canvas
+
+    def put_text(self, text: str, color: tuple, left: bool = True):
+        usable_height = self.window_h - self.frame_h
+        if usable_height == 0:
+            self.extend_frame(0.1)
+            usable_height = self.window_h - self.frame_h
+
+        margin = int(usable_height * 0.1)  # Margin from the edges
+        max_text_height = usable_height - margin * 2  # Space after applying margins
+
+        # Start with an arbitrary large scale and calculate its height
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        base_font_scale = 1.
+        base_thickness = 2
+        (text_width, text_height), baseline = cv2.getTextSize(text, font, base_font_scale, base_thickness)
+
+        # Compute the maximum scale that fits within the desire height
+        font_scale = max_text_height / (text_height + baseline)
+        font_scale = max(font_scale, 0.1)  # Ensure the font scale is not too small
+        thickness = int(font_scale * 2)
+
+        # Set text position
+        (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, thickness)
+        x = margin if left else self.frame_w - text_width - margin
+        y = self.frame_h + margin + text_height
+
+        # Put text on frame
+        cv2.putText(self.rgb_frame, text, (x, y), font, font_scale, color, thickness)
 
 
 # %% Version 1: Sequential, no multithreading (~13 FPS; ~0.0339 s)
@@ -421,10 +454,64 @@ def v2():
     print("System deleted")
 
 
-# %% Version 3: Multithreading + down sampling (~X FPS)
-...
+# %% Version 3: With rich overlays
+def v3():
+    in_queue: queue.Queue[dict] = queue.Queue(maxsize=1)  # Limit to at most 1 pending frame
+    out_queue: queue.Queue[dict] = queue.Queue()
+
+    camera = Camera()
+    posture_system = PostureCorrectionSystem()
+
+    camera.start(in_queue)
+    posture_system.start_thread(in_queue, out_queue)
+
+    # A list of frame timestamps for calculating FPS
+    frame_times: list[float] = []
+
+    # Main thread loop for displaying frames
+    while cv2.waitKey(1) != ord('q'):  # Up to 1000 loops per second
+        item: FrameInfo = out_queue.get()
+        frame_processor = FrameProcessor(item['rgb_frame'])
+
+        # Calculate FPS
+        current_time = time.time()
+        while frame_times and frame_times[0] < current_time - 1:
+            frame_times.pop(0)
+        frame_times.append(item['timestamp'])
+        fps = len(frame_times)
+
+        # Draw FPS
+        frame_processor.put_fps(fps)
+
+        if 'keypoints' in item:
+            # Draw skeletons
+            frame_processor.draw_skeletons(item['keypoints'])
+
+            text = f"{item['predicted_posture']} ({item['posture_prob'].max():.4f})"
+            frame_processor.put_text(text, color=(0, 255, 0), left=True)
+            text = f"{item['predicted_feedback']} ({item['correctness_prob'][item['posture_prob'].argmax()]:.4f})"
+            frame_processor.put_text(text, color=(0, 255, 0), left=False)
+
+        # Display frame
+        bgr_frame = frame_processor.bgr_frame
+        cv2.imshow("Posture Correction System", bgr_frame)
+
+        print("Delay", current_time - item['timestamp'])
+        print("FPS", fps)
+        print()
+
+    # Clean up
+    cv2.destroyAllWindows()
+    camera.stop()
+    print("Camera stopped")
+    posture_system.stop_thread()
+    print("System stopped")
+
+
+# %% TODO: Majority voting
 
 # %% Entry point
 if __name__ == '__main__':
     # v1()
-    v2()
+    # v2()
+    v3()
