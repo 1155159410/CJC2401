@@ -354,19 +354,23 @@ class FrameProcessor:
         cv2.putText(self.rgb_frame, text, (x, y), font, font_scale, color, thickness)
 
 
-# %% Timer Class
-class Timer:
+# %% Stopwatch Class
+class Stopwatch:
     def __init__(self):
         self.current_posture: str = ''
-        self.start_time: datetime = datetime.now()
+        self.total_time: timedelta = timedelta()
+        self.last_update: datetime = datetime.now()
 
-    def update(self, posture: str) -> None:
+    def update(self, posture: str, correctness: str) -> None:
         if posture != self.current_posture:
             self.current_posture = posture
-            self.start_time = datetime.now()
-
-    def total_time(self) -> timedelta:
-        return datetime.now() - self.start_time
+            self.total_time = timedelta()  # Reset timer
+            self.last_update = datetime.now()
+        else:
+            current_time = datetime.now()
+            if correctness == 'Correct':
+                self.total_time += current_time - self.last_update
+            self.last_update = current_time
 
     def total_time_str(self) -> str:
-        return f"{self.total_time():%M:%S}"
+        return f"{self.total_time:%M:%S}"
