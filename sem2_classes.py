@@ -2,6 +2,7 @@
 import queue
 import threading
 import time
+from datetime import datetime, timedelta
 from typing import TypedDict
 
 import cv2
@@ -351,3 +352,21 @@ class FrameProcessor:
 
         # Put text on frame
         cv2.putText(self.rgb_frame, text, (x, y), font, font_scale, color, thickness)
+
+
+# %% Timer Class
+class Timer:
+    def __init__(self):
+        self.current_posture: str = ''
+        self.start_time: datetime = datetime.now()
+
+    def update(self, posture: str) -> None:
+        if posture != self.current_posture:
+            self.current_posture = posture
+            self.start_time = datetime.now()
+
+    def total_time(self) -> timedelta:
+        return datetime.now() - self.start_time
+
+    def total_time_str(self) -> str:
+        return f"{self.total_time():%M:%S}"
