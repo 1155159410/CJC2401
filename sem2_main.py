@@ -110,38 +110,45 @@ def v3():
     camera.start(in_queue)
     posture_system.start_thread(in_queue, out_queue)
 
-    # A list of frame timestamps for calculating FPS
-    frame_times: list[float] = []
+    # A buffer of frames for FPS calculation and majority voting
+    frame_buffer: FrameBuffer = FrameBuffer()
+    # For measuring the cumulative time of an action
+    stopwatch: Stopwatch = Stopwatch()
 
     # Main thread loop for displaying frames
     while cv2.waitKey(1) != ord('q'):  # Up to 1000 loops per second
-        item: FrameInfo = out_queue.get()
-        frame_processor = FrameProcessor(item['rgb_frame'])
-
-        # Calculate FPS
-        current_time = time.time()
-        while frame_times and frame_times[0] < current_time - 1:
-            frame_times.pop(0)
-        frame_times.append(item['timestamp'])
-        fps = len(frame_times)
+        latest_frame: FrameInfo = out_queue.get()
+        frame_buffer.update(latest_frame)
+        frame_processor = FrameProcessor(latest_frame['rgb_frame'])
 
         # Draw FPS
+        fps = frame_buffer.fps
         frame_processor.put_fps(fps)
 
-        if 'keypoints' in item:
-            # Draw skeletons
-            frame_processor.draw_skeletons(item['keypoints'])
+        # Draw skeletons
+        if 'keypoints' in latest_frame:
+            frame_processor.draw_skeletons(latest_frame['keypoints'])
 
-            text = f"{item['predicted_posture']} ({item['posture_prob'].max():.4f})"
-            frame_processor.put_text(text, color=(0, 255, 0), left=True)
-            text = f"{item['predicted_feedback']} ({item['correctness_prob'][item['posture_prob'].argmax()]:.4f})"
-            frame_processor.put_text(text, color=(0, 255, 0), left=False)
+        # Majority voting
+        majority: FrameInfo | None = frame_buffer.get_majority()
+        if majority is None:  # Current frame must also contain no keypoints
+            stopwatch.update('', '')
+        else:
+            stopwatch.update(majority['predicted_posture'], majority['predicted_feedback'])
 
+        # Draw info bar
+        """ TODO
+        text = f"{latest_frame['predicted_posture']} ({latest_frame['posture_prob'].max():.4f})"
+        frame_processor.put_text(text, color=(0, 255, 0), position='left', margin_ratio=0.3)
+        text = f"{latest_frame['predicted_feedback']} ({latest_frame['correctness_prob'][latest_frame['posture_prob'].argmax()]:.4f})"
+        frame_processor.put_text(text, color=(0, 255, 0), position='right', margin_ratio=0.3)
+        frame_processor.put_text(stopwatch.total_time_str(), color=(0, 255, 0), position='center', margin_ratio=0.2)
+        """
         # Display frame
         bgr_frame = frame_processor.bgr_frame
         cv2.imshow("Posture Correction System", bgr_frame)
 
-        print("Delay", current_time - item['timestamp'])
+        print("Delay", time.time() - latest_frame['timestamp'])
         print("FPS", fps)
         print()
 
@@ -152,8 +159,6 @@ def v3():
     posture_system.stop_thread()
     print("System stopped")
 
-
-# %% TODO: Majority voting
 
 # %% Entry point
 if __name__ == '__main__':
