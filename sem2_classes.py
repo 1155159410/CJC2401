@@ -15,6 +15,18 @@ from sklearn.preprocessing import MinMaxScaler
 from torch.nn import functional as F
 
 
+# %% Color Class
+class Color:
+    BLACK = 0, 0, 0
+    GRAY = 180, 180, 180
+    RED = 255, 0, 0
+    GREEN = 0, 255, 0
+    YELLOW = 191, 191, 0
+    CYAN = 0, 191, 191
+    MAGENTA = 191, 0, 191
+    PINK = 255, 20, 147
+
+
 # %% Frame Type Hints Class
 class FrameInfo(TypedDict):
     rgb_frame: np.ndarray
@@ -242,12 +254,12 @@ class PostureCorrectionSystem:
 
 # %% Frame Processor Class
 class FrameProcessor:
-    KEYPOINT_EDGE_IDX_TO_COLOR = {(0, 2): (191, 0, 191), (0, 5): (0, 191, 191), (2, 7): (191, 0, 191),
-                                  (5, 8): (0, 191, 191), (0, 11): (191, 0, 191), (0, 12): (0, 191, 191),
-                                  (11, 13): (191, 0, 191), (13, 15): (191, 0, 191), (12, 14): (0, 191, 191),
-                                  (14, 16): (0, 191, 191), (11, 12): (191, 191, 0), (11, 23): (191, 0, 191),
-                                  (12, 24): (0, 191, 191), (23, 24): (191, 191, 0), (23, 25): (191, 0, 191),
-                                  (25, 27): (191, 0, 191), (24, 26): (0, 191, 191), (26, 28): (0, 191, 191)}
+    KEYPOINT_EDGE_IDX_TO_COLOR = {(0, 2): Color.MAGENTA, (0, 5): Color.CYAN, (2, 7): Color.MAGENTA,
+                                  (5, 8): Color.CYAN, (0, 11): Color.MAGENTA, (0, 12): Color.CYAN,
+                                  (11, 13): Color.MAGENTA, (13, 15): Color.MAGENTA, (12, 14): Color.CYAN,
+                                  (14, 16): Color.CYAN, (11, 12): Color.YELLOW, (11, 23): Color.MAGENTA,
+                                  (12, 24): Color.CYAN, (23, 24): Color.YELLOW, (23, 25): Color.MAGENTA,
+                                  (25, 27): Color.MAGENTA, (24, 26): Color.CYAN, (26, 28): Color.CYAN}
 
     def __init__(self, rgb_frame) -> None:
         self.rgb_frame = rgb_frame.copy()
@@ -295,7 +307,7 @@ class FrameProcessor:
                 self.rgb_frame,
                 coord,
                 radius=max(longest_side // 150, 2),
-                color=(255, 20, 147),
+                color=Color.PINK,
                 thickness=-1
             )
 
@@ -306,7 +318,6 @@ class FrameProcessor:
         font = cv2.FONT_HERSHEY_SIMPLEX
         scale = 1.
         thickness = 3
-        color = (180, 180, 180)  # Gray
 
         # Get text size to align it properly
         (text_width, text_height), _ = cv2.getTextSize(text, font, scale, thickness)
@@ -314,8 +325,8 @@ class FrameProcessor:
         y = 10 + text_height  # Position near the top
 
         # Draw the text on the frame
-        cv2.putText(self.rgb_frame, text, (x, y), font, scale, (0, 0, 0), thickness * 3)
-        cv2.putText(self.rgb_frame, text, (x, y), font, scale, color, thickness)
+        cv2.putText(self.rgb_frame, text, (x, y), font, scale, Color.BLACK, thickness * 3)
+        cv2.putText(self.rgb_frame, text, (x, y), font, scale, Color.GRAY, thickness)
 
     def extend_frame(self, ratio: float):
         extend_height = int(self.frame_h * ratio)
