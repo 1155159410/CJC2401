@@ -7,6 +7,12 @@ warnings.filterwarnings('ignore')
 from sem2_classes import *
 
 
+# %% Function to check if all keypoints are inside the frame
+def all_keypoints_in_frame(keypoints: np.ndarray) -> bool:
+    relative_kpts_xy = keypoints[:, :2]
+    return bool(np.all((relative_kpts_xy >= 0) & (relative_kpts_xy <= 1)))
+
+
 # %% Version 1: Sequential, no multithreading (~13 FPS; ~0.0339 s)
 def v1():
     # Open the default camera
@@ -137,13 +143,35 @@ def v3():
             stopwatch.update(majority['predicted_posture'], majority['predicted_feedback'])
 
         # Draw info bar
-        """ TODO
-        text = f"{latest_frame['predicted_posture']} ({latest_frame['posture_prob'].max():.4f})"
-        frame_processor.put_text(text, color=(0, 255, 0), position='left', margin_ratio=0.3)
-        text = f"{latest_frame['predicted_feedback']} ({latest_frame['correctness_prob'][latest_frame['posture_prob'].argmax()]:.4f})"
-        frame_processor.put_text(text, color=(0, 255, 0), position='right', margin_ratio=0.3)
-        frame_processor.put_text(stopwatch.total_time_str(), color=(0, 255, 0), position='center', margin_ratio=0.2)
-        """
+        if 'keypoints' in latest_frame and all_keypoints_in_frame(latest_frame['keypoints']):
+            color = Color.GREEN if majority['predicted_feedback'] == 'Correct' else Color.RED
+            frame_processor.put_text(
+                text=f"{majority['predicted_posture']} ({majority['posture_prob'].max():.4f})",
+                color=color,
+                position='left',
+                margin_ratio=0.3,
+            )
+            frame_processor.put_text(
+                text=stopwatch.total_time_str(),
+                color=color,
+                position='center',
+                margin_ratio=0.2,
+            )
+            posture_idx = majority['posture_prob'].argmax()
+            frame_processor.put_text(
+                text=f"{majority['predicted_feedback']} ({majority['correctness_prob'][posture_idx]:.4f})",
+                color=color,
+                position='right',
+                margin_ratio=0.3,
+            )
+        else:
+            frame_processor.put_text(
+                text="MAKE SURE YOUR FULL BODY IS IN VIEW",
+                color=Color.RED,
+                position='center',
+                margin_ratio=0.2,
+            )
+
         # Display frame
         bgr_frame = frame_processor.bgr_frame
         cv2.imshow("Posture Correction System", bgr_frame)
