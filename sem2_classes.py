@@ -354,8 +354,53 @@ class FrameProcessor:
         cv2.putText(self.rgb_frame, text, (x, y), font, font_scale, color, thickness)
 
 
+# %% FrameBuffer Class
+class FrameBuffer:
+    """
+    This class buffers frames for a specified duration (≥ 1s) for majority voting.
+    It also computes the FPS in the nearest 1-second interval.
+    """
+
+    def __init__(self, duration: int = 1):
+        assert duration >= 1
+        self.duration: int = duration  # buffer time in seconds
+
+        self.buffer: list[FrameInfo] = []
+        self.fps: int = 0
+
+    def update(self, new_frame: FrameInfo) -> None:
+        self.buffer.append(new_frame)
+
+        count_older_than_1s = 0
+        count_older_than_duration = 0
+
+        current_time = time.time()
+        threshold_1s = current_time - 1
+        threshold_duration = current_time - self.duration
+
+        for frame_info in self.buffer:
+            timestamp = frame_info['timestamp']
+            if timestamp < threshold_1s:
+                count_older_than_1s += 1
+                if timestamp < threshold_duration:
+                    count_older_than_duration += 1
+            else:
+                break  # Buffer is sorted, we can exit early
+
+        self.fps = len(self.buffer) - count_older_than_1s
+        self.buffer = self.buffer[count_older_than_duration:]
+
+    def get_majority(self) -> FrameInfo:
+        ...
+
+
 # %% Stopwatch Class
 class Stopwatch:
+    """
+    This class functions as a stopwatch.
+    It pauses whenever the posture is incorrect and restarts whenever the posture is changed.
+    """
+
     def __init__(self):
         self.current_posture: str = ''
         self.total_time: timedelta = timedelta()
