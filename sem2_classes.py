@@ -2,6 +2,7 @@
 import queue
 import threading
 import time
+from collections import Counter
 from datetime import datetime, timedelta
 from typing import TypedDict
 
@@ -325,13 +326,13 @@ class FrameProcessor:
             constant_values=0,
         )
 
-    def put_text(self, text: str, color: tuple, left: bool = True):
+    def put_text(self, text: str, color: tuple, position: str, margin_ratio: float = 0.2):
         usable_height = self.window_h - self.frame_h
         if usable_height == 0:
             self.extend_frame(0.1)
             usable_height = self.window_h - self.frame_h
 
-        margin = int(usable_height * 0.2)  # Margin from the edges
+        margin = int(usable_height * margin_ratio)  # Margin from the edges
         max_text_height = usable_height - margin * 2  # Space after applying margins
 
         # Start with an arbitrary large scale and calculate its height
@@ -347,7 +348,9 @@ class FrameProcessor:
 
         # Set text position
         (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, thickness)
-        x = margin if left else self.frame_w - text_width - margin
+        x = margin if position == 'left' \
+            else self.frame_w - text_width - margin if position == 'right' \
+            else (self.frame_w - text_width) // 2
         y = self.frame_h + margin + text_height
 
         # Put text on frame
@@ -390,8 +393,30 @@ class FrameBuffer:
         self.fps = len(self.buffer) - count_older_than_1s
         self.buffer = self.buffer[count_older_than_duration:]
 
-    def get_majority(self) -> FrameInfo:
-        ...
+    def get_majority(self) -> FrameInfo | None:
+        predicted_pairs: list[tuple[str, str]] = [(item['predicted_posture'], item['predicted_feedback'])
+                                                  for item in self.buffer if 'keypoints' in item]
+        if not predicted_pairs:
+            return None
+
+        most_common_pair: tuple = Counter(predicted_pairs).most_common(1)[0][0]
+
+        posture_probs: list[np.ndarray] = []
+        correctness_probs: list[np.ndarray] = []
+        for item in self.buffer:
+            if 'keypoints' in item and (item['predicted_posture'], item['predicted_feedback']) == most_common_pair:
+                posture_probs.append(item['posture_prob'])
+                correctness_probs.append(item['correctness_prob'])
+
+        return FrameInfo(
+            rgb_frame=np.array([]),
+            timestamp=0.,
+            keypoints=np.array([]),
+            posture_prob=np.mean(posture_probs, axis=0),
+            correctness_prob=np.mean(correctness_probs, axis=0),
+            predicted_posture=most_common_pair[0],
+            predicted_feedback=most_common_pair[1],
+        )
 
 
 # %% Stopwatch Class
@@ -418,4 +443,5 @@ class Stopwatch:
             self.last_update = current_time
 
     def total_time_str(self) -> str:
-        return f"{self.total_time:%M:%S}"
+        minutes, seconds = divmod(self.total_time.seconds, 60)
+        return f"{minutes:02d}:{seconds:02d}"
