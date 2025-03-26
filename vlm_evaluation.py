@@ -254,3 +254,12 @@ plt.xticks(rotation=45, ha='right')
 plt.title("Confusion Matrix on the Test Set")
 plt.tight_layout()
 plt.show()
+
+# %% Plot time usage graph
+time_records = [result['total_duration'] / 10 ** 9 for result in results]
+plt.hist(time_records, bins=10_000, edgecolor='black')
+plt.xlim([30, 80])  # Ignore outliers
+plt.xlabel('Duration (seconds)')
+plt.ylabel('Frequency')
+plt.title('Histogram of Duration')
+plt.show()
