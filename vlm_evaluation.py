@@ -1,13 +1,18 @@
 # %% Import necessary modules
 import os
 import pickle
+import string
 import time
+from collections import Counter
 
 import mediapipe as mp
 import numpy as np
 import ollama
 import torch
 from PIL import Image
+from matplotlib import pyplot as plt
+from sklearn.metrics import ConfusionMatrixDisplay
+from sklearn.metrics import confusion_matrix
 from torch.utils.data import Dataset
 from torch.utils.data import random_split
 from tqdm import tqdm
@@ -167,7 +172,7 @@ def query_vlm(image_path: str, flipped: bool = False):
     return response
 
 
-# %% Eval the whole test set and store the result
+# %% Eval the whole test set and store the results
 results = []
 for item in tqdm(metadata_list):
     filepath, flipped = item.values()
@@ -175,3 +180,77 @@ for item in tqdm(metadata_list):
     results.append(result)
 with open("vlm_test_results.pkl", 'wb') as f:
     pickle.dump(results, f)
+
+# %% Read the stored results
+with open("vlm_test_results.pkl", 'rb') as f:
+    results = pickle.load(f)
+with open("test_dataset.pkl", 'rb') as f:
+    metadata_list: list[dict] = pickle.load(f)
+
+# %% Generate possible answers
+possible_ans = []
+for validity in ('true', 'false'):
+    for posture_name in ('downdog', 'plank', 'side_plank', 'warrior_ii'):
+        possible_ans.append(f'{posture_name};{validity}')
+for validity in ('true', 'false'):
+    possible_ans.append(f'none;{validity}')
+
+# %% Extract LLM responses
+ans_count = Counter()
+problematic_responses = []
+
+true_indexes = []
+pred_indexes = []
+
+for i, result in enumerate(results):
+    # Get the truth label of the sample
+    filepath = metadata_list[i]['filepath']
+    filepath = filepath.replace('positive', 'true').replace('negative', 'false')
+    truth = ';'.join(filepath.split('/')[2:4])
+    true_indexes.append(possible_ans.index(truth))
+
+    # Preprocess response_msg
+    response_msg: str = result.message.content
+    response_msg = response_msg.lower().replace('; ', ';')
+    # Remove unnecessary punctuations
+    for c in string.punctuation:
+        if c not in ('_', ';'):
+            response_msg = response_msg.replace(c, '')
+
+    # Split response_msg into words to look for keywords
+    msg_words = set(response_msg.split())
+    ans_existence = Counter(ans for ans in possible_ans if ans in msg_words)
+
+    # Only responses with exactly 1 label is valid
+    if ans_existence.total() == 1:
+        ans_count += ans_existence
+        ans: str = ans_existence.most_common()[0][0]
+        pred_indexes.append(possible_ans.index(ans))
+    else:
+        problematic_responses.append(response_msg)
+        pred_indexes.append(-1)
+
+print("Valid responses:", ans_count.total())
+print("Problematic responses:", len(problematic_responses))
+
+# %% Plot the confusion matrix
+class_names: list[str] = []
+for validity in ('Correct', 'Incorrect'):
+    for posture_name in ('Down Dog', 'Plank', 'Side Plank', 'Warrior II'):
+        class_names.append(f"{posture_name} ({validity})")
+class_names.append('Unexpected Response')
+
+# Group unexpected responses
+pred_indexes = [idx if 0 <= idx < 8 else 8 for idx in pred_indexes]
+
+# Generate confusion matrix
+conf_matrix = confusion_matrix(true_indexes, pred_indexes)
+
+# Plot the confusion matrix
+fig, ax = plt.subplots(dpi=300)
+disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=class_names)
+disp.plot(cmap=plt.cm.Blues, ax=ax)
+plt.xticks(rotation=45, ha='right')
+plt.title("Confusion Matrix on the Test Set")
+plt.tight_layout()
+plt.show()
