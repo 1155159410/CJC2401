@@ -1,0 +1,81 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36" version="26.1.3">
+  <diagram name="Page-1" id="gQ1k3IkpAyAtTt11jL9V">
+    <mxGraphModel dx="1434" dy="738" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-3" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="xTi0HJu03ynuBxs2sJYY-1" target="xTi0HJu03ynuBxs2sJYY-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-1" value="A new frame is ready" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="30" y="160" width="140" height="93.33" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-5" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="xTi0HJu03ynuBxs2sJYY-2" target="xTi0HJu03ynuBxs2sJYY-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-16" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="xTi0HJu03ynuBxs2sJYY-2" target="xTi0HJu03ynuBxs2sJYY-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-2" value="Is the user&#39;s full&lt;div&gt;skeleton&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;visible&lt;/span&gt;&lt;div&gt;in the frame?&lt;/div&gt;&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="45" y="280" width="110" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="xTi0HJu03ynuBxs2sJYY-4" target="xTi0HJu03ynuBxs2sJYY-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-4" value="Reset stopwatch" style="whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="225" y="307.5" width="110" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-9" value="Display warning:&lt;div&gt;&quot;MAKE SURE YOUR&lt;/div&gt;&lt;div&gt;FULL BODY IS IN&lt;/div&gt;&lt;div&gt;VIEW&quot;&amp;nbsp;(in red)&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="370" y="288.34" width="140" height="93.33" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-18" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="xTi0HJu03ynuBxs2sJYY-15" target="xTi0HJu03ynuBxs2sJYY-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-21" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="xTi0HJu03ynuBxs2sJYY-15" target="xTi0HJu03ynuBxs2sJYY-20">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-15" value="Is the posture&lt;div&gt;class same as&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;the&lt;/span&gt;&lt;/div&gt;&lt;div&gt;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;previous frame?&lt;/span&gt;&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="40" y="440" width="120" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-36" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="xTi0HJu03ynuBxs2sJYY-17" target="xTi0HJu03ynuBxs2sJYY-20">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="150" y="630" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="280" y="610" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-17" value="Reset stopwatch" style="whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="225" y="472.5" width="110" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-23" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="xTi0HJu03ynuBxs2sJYY-20" target="xTi0HJu03ynuBxs2sJYY-22">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-29" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="xTi0HJu03ynuBxs2sJYY-20" target="xTi0HJu03ynuBxs2sJYY-28">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-20" value="Is the posture&lt;div&gt;correct?&lt;/div&gt;" style="rhombus;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="50" y="610" width="100" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-25" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="xTi0HJu03ynuBxs2sJYY-22" target="xTi0HJu03ynuBxs2sJYY-24">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-22" value="Pause stopwatch" style="whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="225" y="633.17" width="110" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-24" value="Display: posture class,&lt;div&gt;correctness, and&lt;/div&gt;&lt;div&gt;stopwatch time&amp;nbsp;&lt;span style=&quot;background-color: transparent; color: light-dark(rgb(0, 0, 0), rgb(255, 255, 255));&quot;&gt;(in red)&lt;/span&gt;&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="370" y="614" width="140" height="93.34" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-31" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="xTi0HJu03ynuBxs2sJYY-28" target="xTi0HJu03ynuBxs2sJYY-30">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-28" value="Update stopwatch" style="whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="40" y="763" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="xTi0HJu03ynuBxs2sJYY-30" value="Display: posture class,&lt;div&gt;correctness, and&lt;/div&gt;&lt;div&gt;stopwatch time (in green)&lt;/div&gt;" style="ellipse;whiteSpace=wrap;html=1;aspect=fixed;" vertex="1" parent="1">
+          <mxGeometry x="225" y="739.66" width="160" height="106.67" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
