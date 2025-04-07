@@ -171,6 +171,7 @@ def v3():
                 position='center',
                 margin_ratio=0.2,
             )
+            stopwatch.update('', '')  # Reset stopwatch
 
         # Display frame
         bgr_frame = frame_processor.bgr_frame
