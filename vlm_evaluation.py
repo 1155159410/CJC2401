@@ -11,7 +11,6 @@ import ollama
 import torch
 from PIL import Image
 from matplotlib import pyplot as plt
-from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn.metrics import confusion_matrix
 from torch.utils.data import Dataset
 from torch.utils.data import random_split
@@ -243,16 +242,43 @@ class_names.append('Unexpected Response')
 # Group unexpected responses
 pred_indexes = [idx if 0 <= idx < 8 else 8 for idx in pred_indexes]
 
-# Generate confusion matrix
+# Generate the full confusion matrix (9x9)
 conf_matrix = confusion_matrix(true_indexes, pred_indexes)
+
+# Crop the last row (true label: 'Unexpected Response')
+conf_matrix = conf_matrix[:-1, :]  # Now shape is 8×9
 
 # Plot the confusion matrix
 fig, ax = plt.subplots(figsize=(8, 6), dpi=300)
-disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=class_names)
-disp.plot(cmap=plt.cm.Blues, ax=ax)
-plt.xticks(rotation=45, ha='right')
+
+# Avoid using ConfusionMatrixDisplay's automatic label handling
+im = ax.imshow(conf_matrix, cmap=plt.cm.Blues)
+
+# Set x-axis (predicted) labels
+ax.set_xticks(np.arange(len(class_names)))
+ax.set_xticklabels(class_names, rotation=45, ha='right')
+
+# Set y-axis (true) labels — only first 8
+ax.set_yticks(np.arange(len(class_names) - 1))
+ax.set_yticklabels(class_names[:-1])
+
+# Compute font color (dark blue)
+r, g, b = 20, 47, 103
+font_color = (r / 255, g / 255, b / 255)
+
+# Add counts inside cells
+for i in range(conf_matrix.shape[0]):
+    for j in range(conf_matrix.shape[1]):
+        value = conf_matrix[i, j]
+        ax.text(j, i, format(value, 'd'),
+                ha='center', va='center',
+                color='white' if value > conf_matrix.max() / 2 else font_color)
+
 plt.title("Confusion Matrix on Test Set (w/o Normalization)")
+plt.xlabel("Predicted Label")
+plt.ylabel("True Label")
 plt.tight_layout()
+plt.colorbar(im, ax=ax)
 plt.show()
 
 # %% Plot the normalized confusion matrix
@@ -265,19 +291,46 @@ class_names.append('Unexpected Response')
 # Group unexpected responses
 pred_indexes = [idx if 0 <= idx < 8 else 8 for idx in pred_indexes]
 
-# Generate confusion matrix
+# Generate the full confusion matrix (9x9)
 conf_matrix = confusion_matrix(true_indexes, pred_indexes)
 
 # Normalize the confusion matrix row-wise
 conf_matrix_normalized = conf_matrix.astype('float') / conf_matrix.sum(axis=1, keepdims=True).clip(min=1)
 
+# Crop the last row (true label: 'Unexpected Response')
+conf_matrix_normalized = conf_matrix_normalized[:-1, :]  # Now shape is 8×9
+
 # Plot the confusion matrix
 fig, ax = plt.subplots(figsize=(8, 6), dpi=300)
-disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix_normalized, display_labels=class_names)
-disp.plot(cmap=plt.cm.Blues, ax=ax, values_format='.2f')  # Show 2 decimal places
-plt.xticks(rotation=45, ha='right')
+
+# Avoid using ConfusionMatrixDisplay's automatic label handling
+im = ax.imshow(conf_matrix_normalized, cmap=plt.cm.Blues)
+
+# Set x-axis (predicted) labels
+ax.set_xticks(np.arange(len(class_names)))
+ax.set_xticklabels(class_names, rotation=45, ha='right')
+
+# Set y-axis (true) labels — only first 8
+ax.set_yticks(np.arange(len(class_names) - 1))
+ax.set_yticklabels(class_names[:-1])
+
+# Compute font color (dark blue)
+r, g, b = 20, 47, 103
+font_color = (r / 255, g / 255, b / 255)
+
+# Add counts inside cells
+for i in range(conf_matrix_normalized.shape[0]):
+    for j in range(conf_matrix_normalized.shape[1]):
+        value = conf_matrix_normalized[i, j]
+        ax.text(j, i, format(value, '.2f'),
+                ha='center', va='center',
+                color='white' if value > conf_matrix_normalized.max() / 2 else font_color)
+
 plt.title("Confusion Matrix on Test Set (w/ Normalization)")
+plt.xlabel("Predicted Label")
+plt.ylabel("True Label")
 plt.tight_layout()
+plt.colorbar(im, ax=ax)
 plt.show()
 
 # %% Plot time usage graph
