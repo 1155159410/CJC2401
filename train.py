@@ -457,6 +457,19 @@ fig, ax = plt.subplots(dpi=300)
 disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix, display_labels=class_names)
 disp.plot(cmap=plt.cm.Blues, ax=ax)
 plt.xticks(rotation=45, ha='right')
-plt.title("Confusion Matrix on the Test Set")
+plt.title("Confusion Matrix on Test Set (w/o Normalization)")
+plt.tight_layout()
+plt.show()
+
+# %% Plot the normalized confusion matrix
+# Normalize the confusion matrix row-wise
+conf_matrix_normalized = conf_matrix.astype('float') / conf_matrix.sum(axis=1, keepdims=True)
+
+# Plot the confusion matrix
+fig, ax = plt.subplots(dpi=300)
+disp = ConfusionMatrixDisplay(confusion_matrix=conf_matrix_normalized, display_labels=class_names)
+disp.plot(cmap=plt.cm.Blues, ax=ax, values_format='.2f')  # Show 2 decimal places
+plt.xticks(rotation=45, ha='right')
+plt.title("Confusion Matrix on Test Set (w/ Normalization)")
 plt.tight_layout()
 plt.show()
