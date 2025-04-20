@@ -1,0 +1,95 @@
+Sub RemoveProgressBar()
+    Dim slide As slide
+    Dim shape As shape
+    Dim i As Integer
+    Dim shapesToDelete As Collection
+    Dim s As shape
+
+    ' Loop through each slide in the presentation
+    For Each slide In ActivePresentation.Slides
+        Set shapesToDelete = New Collection
+
+        ' First collect all shapes tagged as ProgressBlock
+        For Each shape In slide.Shapes
+            If shape.Tags("ProgressBlock") = "True" Then
+                shapesToDelete.Add shape
+            End If
+        Next shape
+
+        ' Then delete them (to avoid modifying collection during iteration)
+        For Each s In shapesToDelete
+            s.Delete
+        Next s
+    Next slide
+
+    MsgBox "Progress bar removed from all slides.", vbInformation
+End Sub
+
+
+' ================================================================
+
+
+Sub AddProgressBar()
+    Dim slide As slide
+    Dim shape As shape
+    Dim totalSlides As Integer
+    Dim i As Integer, j As Integer
+    Dim slideWidth As Single, slideHeight As Single
+    Dim blockCount As Integer
+    Dim blockWidth As Single, blockHeight As Single, blockSpacing As Single
+    Dim marginTop As Single, sideMargin As Single
+    Dim leftPos As Single
+
+    ' Settings
+    blockHeight = 5.67       ' 0.2 cm ≈ 5.67 points
+    blockSpacing = 5         ' Space between blocks in points
+    marginTop = 5            ' Top margin in points
+    sideMargin = 10          ' Left and right margin in points
+
+    totalSlides = ActivePresentation.Slides.Count
+    blockCount = totalSlides
+
+    slideWidth = ActivePresentation.PageSetup.SlideWidth
+    slideHeight = ActivePresentation.PageSetup.SlideHeight
+
+    ' Calculate block width dynamically with side margins
+    blockWidth = (slideWidth - 2 * sideMargin - ((blockCount - 1) * blockSpacing)) / blockCount
+
+    ' Loop through slides
+    For i = 1 To totalSlides
+        Set slide = ActivePresentation.Slides(i)
+
+        ' Remove existing progress bar shapes
+        For Each shape In slide.Shapes
+            If shape.Tags("ProgressBlock") = "True" Then
+                shape.Delete
+            End If
+        Next shape
+
+        ' Add progress bar blocks
+        For j = 1 To blockCount
+            leftPos = sideMargin + (j - 1) * (blockWidth + blockSpacing)
+
+            Set shape = slide.Shapes.AddShape(Type:=msoShapeRoundedRectangle, _
+                                              Left:=leftPos, Top:=marginTop, _
+                                              Width:=blockWidth, Height:=blockHeight)
+
+            shape.Tags.Add "ProgressBlock", "True"
+            shape.Adjustments.Item(1) = 0.5 ' Rounded corners
+
+            ' Fill color
+            If j <= i Then
+                shape.Fill.ForeColor.RGB = RGB(78, 167, 46) ' Green #4EA72E
+            Else
+                shape.Fill.ForeColor.RGB = RGB(220, 220, 220) ' Light gray
+            End If
+
+            ' Black outline - using 0.5 pt as requested
+            shape.Line.Visible = msoTrue
+            shape.Line.ForeColor.RGB = RGB(0, 0, 0)
+            shape.Line.Weight = 0.5
+        Next j
+    Next i
+
+    MsgBox "Progress bar added with 0.5pt black outlines!", vbInformation
+End Sub
