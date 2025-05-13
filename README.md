@@ -1,6 +1,6 @@
 # CJC2401: Real-Time Posture Correction for Yoga Practice
 
-**Author:** Wang Chi HUI  
+**Author:** HUI Wang Chi  
 **Affiliation:** The Chinese University of Hong Kong  
 **Supervisor:** Dr. CHAU Chuck-jee
 
